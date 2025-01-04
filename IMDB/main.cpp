@@ -1,18 +1,21 @@
 #include<iostream>
 #include<fstream>
 
-const int MAX_LEN_ROLE = 14;
-const int MAX_LEN_COMMAND = 6;
-const int MAX_LEN_OPTION = 9;  // GENRE - 5 , CAST - 4, DIRECTOR - 8, RATING - 6, TITLE - 5
+const int MAX_LEN_ROLE = 15;
+const int MAX_LEN_COMMAND = 7;
+const int MAX_LEN_OPTION = 8;  // GENRE - 5 , CAST - 4, DIRECTOR - 8, RATING - 6, TITLE - 5
 const int TO_LOWER_CASE_CHANGE = 'a' - 'A';
 const int TO_UPPER_CASE_CHANGE = 'A' - 'a';
 const int TO_CHAR = '0';
 const int TO_INTEGER = -'0';
 const int DEFAULT_RATING = 5;
-const int MAX_LEN_GENRE = 100;
-const int MAX_LEN_MOVIE_TITLES = 1000;
-const int MAX_LEN_MOVIE_DIRECTOR = 500;
-const int MAX_LEN_MOVIE_CAST = 2056;
+const int MAX_LEN_GENRE = 101;
+const int MAX_LEN_MOVIE_TITLES = 1001;
+const int MAX_LEN_MOVIE_DIRECTOR = 501;
+const int MAX_LEN_MOVIE_CAST = 2057;
+const int MIN_RATING = 0;
+const int MAX_RATING = 10;
+const int MAX_LEN_RATING = 3;
 const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5; // MAX_LEN_MOVIE_TITLES + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + RATING (MAX - 2 digits) + 10 spaces + 5 lines
 
 //Base Functions
@@ -34,6 +37,7 @@ char** readMoviesFromFile(const char* fileName, int& movieCount);
 void writeLines(const char* fileName, char** lines, int lineCount);
 void freeMovies(char** movies, int movieCount);
 void printMovies(char** movies, int movieCount);
+bool checkIfRatingIsValid(const char* rating);
 
 //Main Functions
 int addNewMovieToDataBase(const char* title, int year, const char* genre, const char* director, const char* cast, const char* fileName);
@@ -133,7 +137,7 @@ bool contains(const char* str1, const char* str2) {
 	return myStrStr(str1, str2) != nullptr;
 }
 
-const char* findDelimiter(const char* str, int n, char delimiter = '|') {
+const char* findDelimiter(const char* str, int n, char delimiter) {
 	const char* pos = str;
 	while (*pos && n > 0) {
 		if (*pos == delimiter) {
@@ -190,7 +194,7 @@ void myStrCpyWithStartPos(char* dest, const char* src, int index) {
 }
 
 char** readMoviesFromFile(const char* fileName, int& movieCount) {
-	int movieCount = countLinesInFile(fileName);
+	movieCount = countLinesInFile(fileName);
 
 	char** movies = new char* [movieCount];
 	for (int i = 0; i < movieCount; ++i) {
@@ -248,6 +252,29 @@ void printMovies(char** movies, int movieCount) {
 		std::cout << movies[i] << std::endl;
 	}
 }
+
+bool checkIfRatingIsValid(const char* rating) {
+	if (!rating || rating[0] == '\0') {
+		return false;
+	}
+
+	if (rating[0] < '0' || rating[0] > '9') {
+		return false;
+	}
+
+	if (rating[1] == '\0') {
+		return rating[0] >= '1' && rating[0] <= '9';
+	}
+
+	if (rating[0] == '1' && rating[1] == '0' && rating[2] == '\0') {
+		return true;
+	}
+
+	return false;
+}
+
+
+
 
 //Add new movie to the database
 int addNewMovieToDataBase(const char* title, int year, const char* genre, const char* director, const char* cast, const char* fileName) {
@@ -375,7 +402,7 @@ bool readAndWriteLineWithUpdatedTitle(std::ifstream& inFile, std::ofstream& outF
 	}
 
 	if (contains(line, movieTitle)) {
-		updateTitleInLine(line, newTitle);
+		updateTitleInLine(line, newTitle, line);
 		found = true;
 	}
 
@@ -640,7 +667,7 @@ void updateLineWithNewRating(char* line, const char* newRating) {
 	myStrCpyWithStartPos(line, updatedLine, MAX_LEN_LINE - 1);
 }
 
-bool updateMovieRating(const char* movieTitle, const char* newRating, const char* fileName) {
+bool updateMovieRating(const char* movieTitle, char* newRating, const char* fileName) {
 	std::ifstream inFile(fileName);
 	if (!inFile.is_open()) {
 		std::cerr << fileName << " couldn't be opened!" << std::endl;
@@ -729,7 +756,7 @@ void sortMoviesByRating(char** movies, int movieCount) {
 }
 
 //Rate movie
-bool updateMovieRating(char** lines, int lineCount, const char* title, int newRating) {
+bool updateMovieRatingToAvg(char** lines, int lineCount, const char* title, int newRating) {
 	for (int i = 0; i < lineCount; ++i) {
 		if (myStrStr(lines[i], title)) {
 			int lastPipe = -1;
@@ -755,7 +782,7 @@ int rateMovie(const char* title, int rating, const char* fileName) {
 	char** lines = readMoviesFromFile(fileName, lineCount);
 	if (!lines) return 1;
 
-	if (!updateMovieRating(lines, lineCount, title, rating)) {
+	if (!updateMovieRatingToAvg(lines, lineCount, title, rating)) {
 		for (int i = 0; i < lineCount; ++i) delete[] lines[i];
 		delete[] lines;
 		return 1;
@@ -901,7 +928,7 @@ int main() {
 				char genre1[MAX_LEN_GENRE];
 				std::cout << "Enter a movie genre: ";
 				std::cin.ignore();
-				std::cin.getline(genre1, MAX_LEN_GENRE + 1);
+				std::cin.getline(genre1, MAX_LEN_GENRE);
 
 				findMovieByGenre(genre1, fileName);
 			}
@@ -909,7 +936,7 @@ int main() {
 				char movieTitle2[MAX_LEN_MOVIE_TITLES];
 				std::cout << "Enter a movie title: ";
 				std::cin.ignore();
-				std::cin.getline(movieTitle2, MAX_LEN_MOVIE_TITLES + 1);
+				std::cin.getline(movieTitle2, MAX_LEN_MOVIE_TITLES);
 
 				findMovieByTitle(movieTitle2, fileName);
 			}
@@ -1042,12 +1069,141 @@ int main() {
 				std::cout << "What do you want to change about a movie? - Enter one of the words \"title\", \"genre\", \"director\", \"cast\" or \"rating\" below!" << std::endl;
 				std::cin.ignore();
 				std::cin.getline(option, MAX_LEN_OPTION);
-				if (myStrCmp(toLower(command), "title") == 0) {
-					if(updatemovi)
+				if (myStrCmp(toLower(option), "title") == 0) {
+					std::cout << "Enter the movie you want to change the title of: ";
+					char movieToChangeTitleOf[MAX_LEN_MOVIE_TITLES];
+					std::cin.ignore();
+					std::cin.getline(movieToChangeTitleOf, MAX_LEN_MOVIE_TITLES);
+					std::cout << "Enter new movie title: ";
+					char newMovieTitle[MAX_LEN_MOVIE_TITLES];
+					std::cin.ignore();
+					std::cin.getline(newMovieTitle, MAX_LEN_MOVIE_TITLES);
+
+					if (updateMovieTitle(movieToChangeTitleOf, newMovieTitle, fileName)) {
+						std::cout << "The title of \"" << movieToChangeTitleOf << "\" has been changed to \"" << newMovieTitle << "\" successfully!" << std::endl;
+					}
+					else {
+						std::cout << "The operation wasn't successful!" << std::endl;
+					}
 				}
-				
-				if()
+				else if (myStrCmp(toLower(option), "genre") == 0) {
+					std::cout << "Enter the movie you want to change the genre of: ";
+					char movieToChangeGenreOf[MAX_LEN_MOVIE_TITLES];
+					std::cin.ignore();
+					std::cin.getline(movieToChangeGenreOf, MAX_LEN_MOVIE_TITLES);
+					char newGenre[MAX_LEN_GENRE];
+					std::cout << "Enter the new genre: ";
+					std::cin.ignore();
+					std::cin.getline(newGenre, MAX_LEN_GENRE);
+
+					if (updateMovieGenre(movieToChangeGenreOf, newGenre, fileName)) {
+						std::cout << "The genre of \"" << movieToChangeGenreOf << "\" has been changed successfully!" << std::endl;
+					}
+					else {
+						std::cout << "The operation wasn't successful!" << std::endl;
+					}
+				}
+				else if (myStrCmp(toLower(option), "director") == 0) {
+					std::cout << "Enter the movie you want to change the director of: ";
+					char movieToChangeTheDirectorOf[MAX_LEN_MOVIE_TITLES];
+					std::cin.ignore();
+					std::cin.getline(movieToChangeTheDirectorOf, MAX_LEN_MOVIE_TITLES);
+					char newDirector[MAX_LEN_MOVIE_DIRECTOR];
+					std::cout << "Enter the name of the new movie director: ";
+					std::cin.ignore();
+					std::cin.getline(newDirector, MAX_LEN_MOVIE_DIRECTOR);
+
+					if (updateMovieDirector(movieToChangeTheDirectorOf, newDirector, fileName)) {
+						std::cout << "The director of \"" << movieToChangeTheDirectorOf << "\" has been changed successfully!" << std::endl;
+					}
+					else {
+						std::cout << "The operation wasn't successful!" << std::endl;
+					}
+				}
+				else if (myStrCmp(toLower(option), "cast") == 0) {
+					std::cout << "Enter the title of themovie you want to change the cast of: ";
+					char movieToChangeTheCastOf[MAX_LEN_MOVIE_CAST];
+					std::cin.ignore();
+					std::cin.getline(movieToChangeTheCastOf, MAX_LEN_MOVIE_TITLES);
+					char newCast[MAX_LEN_MOVIE_CAST];
+					std::cout << "Enter the new cast of the movie: ";
+					std::cin.ignore();
+					std::cin.getline(newCast, MAX_LEN_MOVIE_CAST);
+
+					if (updateMovieCast(movieToChangeTheCastOf, newCast, fileName)) {
+						std::cout << "The cast of \"" << movieToChangeTheCastOf << "\" has been changed successfully!" << std::endl;
+					}
+					else {
+						std::cout << "The operation wasn't successful!" << std::endl;
+					}
+
+				}
+				else if (myStrCmp(toLower(option), "rating") == 0) {
+					std::cout << "Enter the title of movie you want to change the rating of: ";
+					char movieToChangeTheRatingOf[MAX_LEN_MOVIE_TITLES];
+					std::cin.ignore();
+					std::cin.getline(movieToChangeTheRatingOf, MAX_LEN_MOVIE_TITLES);
+					char newRating[MAX_LEN_RATING];
+					std::cout << "Enter the new rating: ";
+					std::cin.ignore();
+					std::cin.getline(newRating, MAX_LEN_RATING);
+
+					if (!checkIfRatingIsValid(newRating)) {
+						std::cerr << "Invalid input! The new rating should be an integer between 0 and 10!" << std::endl;
+						return 1;
+					}
+
+
+					if (updateMovieRating(movieToChangeTheRatingOf, newRating, fileName)) {
+						std::cout << "The rating of \"" << movieToChangeTheRatingOf << "\" has been changed successfully!" << std::endl;
+					}
+					else {
+						std::cout << "The operatin wasn't successful!" << std::endl;
+					}
+				}
 			}
+			else if (myStrCmp(command, "6") == 0) {
+				char movieToDelete[MAX_LEN_MOVIE_TITLES];
+				std::cout << "Enter the title of the movie you want to delete: ";
+				std::cin.ignore();
+				std::cin.getline(movieToDelete, MAX_LEN_MOVIE_TITLES);
+
+				deleteMovieByTitle(movieToDelete, fileName);
+
+				std::cout << "The movie \"" << movieToDelete << "\" has been deleted successfully!" << std::endl;
+			}
+			else if (myStrCmp(command, "7") == 0) {
+				int moviesCountToSortByT = countLinesInFile(fileName);
+				char** moviesToSortByTitle = readMoviesFromFile(fileName, moviesCountToSortByT);
+				std::cout << "Movies sorted by title:" << std::endl;
+				sortMoviesByTitle(moviesToSortByTitle, moviesCountToSortByT);
+				printMovies(moviesToSortByTitle, moviesCountToSortByT);
+				freeMovies(moviesToSortByTitle, moviesCountToSortByT);
+			}
+			else if (myStrCmp(command, "8") == 0) {
+				int moviesCountToSortByR = countLinesInFile(fileName);
+				char** moviesToSortByRating = readMoviesFromFile(fileName, moviesCountToSortByR);
+				std::cout << "Movies sorted by rating: " << std::endl;
+				sortMoviesByRating(moviesToSortByRating, moviesCountToSortByR);
+				printMovies(moviesToSortByRating, moviesCountToSortByR);
+				freeMovies(moviesToSortByRating, moviesCountToSortByR);
+			}
+			else if (myStrCmp(command, "9") == 0) {
+				int rating;
+				std::cout << "Enter rating you want to filter the movies by: ";
+				std::cin >> rating;
+
+				filterMoviesByRating(fileName, rating);
+			}
+			else if (myStrCmp(toUpper(command), "CLOSE") == 0) {
+				std::cout << "Thank you for using my IMDB! You can exit the program now!" << std::endl;
+				return 0;
+			}
+			else {
+				std::cerr << "Your command is invalid!" << std::endl;
+				return 1;
+			}
+			
 		}
 
 	}
