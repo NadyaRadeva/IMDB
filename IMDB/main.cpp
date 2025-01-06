@@ -1039,10 +1039,10 @@ int main() {
 
 				filterMoviesByRating(fileName, rating);
 			}*/
-			/*else if (myStrCmp(toUpper(command), "CLOSE") == 0) {
-				std::cout << "Thank you for using my IMDB! You can exit the program now!" << std::endl;
+			else if (myStrCmp(toUpper(command), "CLOSE") == 0) {
+				std::cout << "Thank you for using my IMDB! You can exit the program now by pressing 'ENTER'!" << std::endl;
 				return 0;
-			}*/
+			}
 			else {
 				std::cout << "Your command is invalid!" << std::endl;
 			}
@@ -1083,7 +1083,7 @@ int main() {
 				std::cin.ignore();
 
 				char movieDirector[MAX_LEN_MOVIE_DIRECTOR];
-				std::cout << "Input the names of the movie director: ";
+				std::cout << "Input the name of the movie director: ";
 				std::cin.getline(movieDirector, MAX_LEN_MOVIE_DIRECTOR + 1);
 
 				char movieCast[MAX_LEN_MOVIE_CAST];
@@ -1243,10 +1243,10 @@ int main() {
 
 				filterMoviesByRating(fileName, rating);
 			}*/
-			/*else if (myStrCmp(toUpper(command), "CLOSE") == 0) {
-				std::cout << "Thank you for using my IMDB! You can exit the program now!" << std::endl;
+			else if (myStrCmp(toUpper(command), "CLOSE") == 0) {
+				std::cout << "Thank you for using my IMDB! You can exit the program now by pressing 'ENTER'!" << std::endl;
 				return 0;
-			}*/
+			}
 			else {
 				std::cerr << "Your command is invalid!" << std::endl;
 				return 1;
