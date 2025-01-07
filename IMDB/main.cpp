@@ -19,16 +19,25 @@ const int MAX_LEN_RATING = 3;
 const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5; // MAX_LEN_MOVIE_TITLES + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + RATING (MAX - 2 digits) + 10 spaces + 5 lines
 
 //Base Functions
+//Simple checks
 bool isLetter(char ch);
 bool isLowerCase(char ch);
 bool isUpperCase(char ch);
+char toLowerCaseChar(char ch);
+char toUpperCaseChar(char ch);
+
 int findTextLen(const char* text);
+
+//Text modifications and more complicated checks
 char* toLower(char* userInput);
 char* toUpper(char* userInput);
-int myStrCmp(const char* str1, const char* str2);
-char* myStrStr(const char* str1, const char* str2);
 bool contains(const char* str1, const char* str2);
 char* modifyInputGenre(const char* inputGenre);
+bool isSubstringMatch(const char* str, const char* subStr);
+
+//String arrays base functions
+int myStrCmp(const char* str1, const char* str2);
+char* myStrStr(const char* str1, const char* str2);
 //bool myStrCat(char* destination, const char* source, size_t destSize);
 //const char* findDelimiter(const char* str, int n, char delimiter = '|');
 //std::ofstream createTempFile();
@@ -66,6 +75,16 @@ bool isUpperCase(char ch) {
 	return ch >= 'A' && ch <= 'Z';
 }
 
+//Function that turns a single character lower case
+char toLowerCaseChar(char ch) {
+	return (ch >= 'A' && ch <= 'Z') ? ch + TO_LOWER_CASE_CHANGE : ch;
+}
+
+//Function that turns a single character upper case
+char toUpperCaseChar(char ch) {
+	return (ch >= 'a' && ch <= 'z') ? ch + TO_UPPER_CASE_CHANGE : ch;
+}
+
 //Function that finds the length of a string array
 int findTextLen(const char* text) {
 	if (text == nullptr) {
@@ -87,9 +106,7 @@ char* toLower(char* userInput) {
 	int textLen = findTextLen(userInput);
 
 	for (size_t i = 0; i < textLen; ++i) {
-		if (isUpperCase(userInput[i])) {
-			userInput[i] += TO_LOWER_CASE_CHANGE;
-		}
+		userInput[i] = toLowerCaseChar(userInput[i]);
 	}
 
 	return userInput;
@@ -100,9 +117,7 @@ char* toUpper(char* userInput) {
 	int textLen = findTextLen(userInput);
 
 	for (size_t i = 0; i < textLen; ++i) {
-		if (isLowerCase(userInput[i])) {
-			userInput[i] += TO_UPPER_CASE_CHANGE;
-		}
+		userInput[i] = toUpperCaseChar(userInput[i]);
 	}
 
 	return userInput;
@@ -120,7 +135,7 @@ int myStrCmp(const char* str1, const char* str2) {
 	return (*str1 - *str2);
 }
 
-//Function that checks if a string array is a substring of another string array
+//Function that checks if a string array is a substring of another string array by return a pointer
 char* myStrStr(const char* str1, const char* str2) {
 	if (!*str2) {
 		return (char*)str1;
@@ -150,7 +165,7 @@ bool contains(const char* str1, const char* str2) {
 	return myStrStr(str1, str2) != nullptr;
 }
 
-
+//Function that changes the first letter of the genre, inputed by the used, by turning it in upper case
 char* modifyInputGenre(const char* inputGenre) {
 	int inputGenreLen = findTextLen(inputGenre);
 	char* modifiedGenre = new char[inputGenreLen + 1];
@@ -181,7 +196,30 @@ char* modifyInputGenre(const char* inputGenre) {
 	return modifiedGenre;
 }
 
+//Function checking if the user input matches a part of the title
+bool isSubstringMatch(const char* str, const char* subStr) {
+	if (!str || !subStr) return false;
 
+	int strLen = strlen(str);
+	int subStrLen = strlen(subStr);
+
+	if (subStrLen > strLen) {
+		return false;
+	}
+
+	for (int i = 0; i <= strLen - subStrLen; ++i) {
+		bool isMatchFound = true;
+		for (int j = 0; j < subStrLen; ++j) {
+			if (toLowerCaseChar(str[i + j]) != toLowerCaseChar(subStr[j])) {
+				isMatchFound = false;
+				break;
+			}
+		}
+		if (isMatchFound) return true;
+	}
+
+	return false;
+}
 
 
 
@@ -197,6 +235,7 @@ char* modifyInputGenre(const char* inputGenre) {
 //	return (n == 0) ? pos : nullptr;
 //}
 
+//Function that counts how many lines there are in our text file (movie database)
 int countLinesInFile(const char* fileName) {
 	std::ifstream myFile(fileName);
 	if (!myFile.is_open()) {
@@ -386,7 +425,7 @@ int findMovieByTitle(const char* title, const char* fileName) {
 
 	std::cout << "Movies with the title '" << title << "': " << std::endl;
 	while (myFile.getline(line, MAX_LEN_LINE)) {
-		if (contains(line, title)) {
+		if (isSubstringMatch(line, title)) {
 			std::cout << line << "\n";
 			found = true;
 		}
@@ -404,8 +443,6 @@ int findMovieByTitle(const char* title, const char* fileName) {
 int showAllMoviesInDatabase(const char* fileName) {
 	std::ifstream myFile(fileName);
 
-	myFile.open(fileName);
-
 	if (!myFile) {
 		std::cerr << fileName << " couldn't be opened!" << std::endl;
 		return 1;
@@ -413,16 +450,13 @@ int showAllMoviesInDatabase(const char* fileName) {
 
 	char line[MAX_LEN_LINE];
 
-	while (!myFile.eof()) {
-		myFile.getline(line, MAX_LEN_LINE);
-
+	while (myFile.getline(line, MAX_LEN_LINE)) {
 		std::cout << line << std::endl;
 	}
 
 	myFile.close();
 	return 0;
 }
-
 
 
 //Change movie title
@@ -1096,7 +1130,6 @@ int main() {
 			else if (myStrCmp(command, "2") == 0) {
 				std::cout << "Enter your genre: ";
 				char genreToFindMovie[MAX_LEN_GENRE];
-				std::cin.ignore();
 
 				std::cin.getline(genreToFindMovie, MAX_LEN_GENRE);
 
@@ -1105,7 +1138,6 @@ int main() {
 			else if (myStrCmp(command, "3") == 0) {
 				std::cout << "Enter your title: ";
 				char titleToFindMovie[MAX_LEN_MOVIE_TITLES];
-				std::cin.ignore();
 				std::cin.getline(titleToFindMovie, MAX_LEN_MOVIE_TITLES);
 
 				findMovieByTitle(titleToFindMovie, fileName);
