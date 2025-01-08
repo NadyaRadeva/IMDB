@@ -8,6 +8,7 @@ const int TO_LOWER_CASE_CHANGE = 'a' - 'A';
 const int TO_UPPER_CASE_CHANGE = 'A' - 'a';
 const int TO_CHAR = '0';
 const int TO_INTEGER = -'0';
+const int DISTANCE_BETWEEN_MOVIE_PARAMETERS = 3; // " | "
 const int DEFAULT_RATING = 5;
 const int MAX_LEN_GENRE = 400;
 const int MAX_LEN_MOVIE_TITLES = 1000;
@@ -38,11 +39,15 @@ bool isSubstringMatch(const char* str, const char* subStr);
 //String arrays base functions
 int myStrCmp(const char* str1, const char* str2);
 char* myStrStr(const char* str1, const char* str2);
-//bool myStrCat(char* destination, const char* source, size_t destSize);
-//const char* findDelimiter(const char* str, int n, char delimiter = '|');
-std::ofstream createTempFile();
+
+//Function that replaces the current title of a movie with a new one
+bool updateTitleInLine(char* line, const char* oldTitle, const char* newTitle);
+
 int countLinesInFile(const char* fileName);
 void myStrCpy(const char* source, char* dest);
+
+//bool myStrCat(char* destination, const char* source, size_t destSize);
+//const char* findDelimiter(const char* str, int n, char delimiter = '|');
 //void myStrCpyWithStartPos(char* dest, const char* src, int index);
 //char** readMoviesFromFile(const char* fileName, int& movieCount);
 //void writeLines(const char* fileName, char** lines, int lineCount);
@@ -55,6 +60,8 @@ int addNewMovieToDataBase(const char* title, int year, const char* genre, const 
 int findMovieByGenre(const char* genre, const char* fileName);
 int findMovieByTitle(const char* title, const char* fileName);
 int showAllMoviesInDatabase(const char* fileName);
+bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fileName);
+
 //bool deleteMovie(std::ifstream& myFile, std::ofstream& tempFile, const char* title);
 //bool replaceOriginalFile(const char* fileName);
 //int deleteMovieByTitle(const char* title, const char* fileName);
@@ -558,72 +565,101 @@ bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fi
 	return titleUpdated;
 }
 
-
+//Change release year of movie
+//Function to update the title in a line
 
 //Change movie genre
-//void updateLineWithNewGenre(char* line, const char* newGenre) {
-//	char updatedLine[MAX_LEN_LINE] = { 0 };
-//
-//	const char* genreStart = findDelimiter(line, 1);
-//	const char* genreEnd = findDelimiter(genreStart, 1);
-//
-//	if (!genreStart || !genreEnd) {
-//		std::cerr << "Error: Could not parse genre in line: " << line << std::endl;
-//		return;
-//	}
-//
-//	int titleLen = genreStart - line;
-//	myStrCpyWithStartPos(updatedLine, line, titleLen);
-//
-//	myStrCat(updatedLine, ", ", MAX_LEN_LINE - findTextLen(updatedLine) - 1);
-//	myStrCat(updatedLine, newGenre, MAX_LEN_LINE - findTextLen(updatedLine) - 1);
-//	myStrCat(updatedLine, genreEnd, MAX_LEN_LINE - findTextLen(updatedLine) - 1);
-//
-//	myStrCpyWithStartPos(line, updatedLine, MAX_LEN_LINE - 1);
-//}
-//
-//bool readAndWriteLineWithUpdatedGenre(std::ifstream& inFile, std::ofstream& outFile, const char* movieTitle, const char* newGenre, bool& found) {
-//	char line[MAX_LEN_LINE];
-//	if (!inFile.getline(line, MAX_LEN_LINE)) {
-//		return false;
-//	}
-//
-//	if (contains(line, movieTitle)) {
-//		updateLineWithNewGenre(line, newGenre);
-//		found = true;
-//	}
-//
-//	outFile << line << std::endl;
-//	return true;
-//}
-//
-//
-//bool updateMovieGenre(const char* movieTitle, const char* newGenre, const char* fileName) {
-//	std::ifstream inFile(fileName);
-//	if (!inFile.is_open()) {
-//		std::cerr << fileName << " couldn't be opened!" << std::endl;
-//		return false;
-//	}
-//
-//	std::ofstream outFile = createTempFile();
-//	if (!outFile.is_open()) {
-//		inFile.close();
-//		return false;
-//	}
-//
-//	bool found = false;
-//	while (readAndWriteLineWithUpdatedGenre(inFile, outFile, movieTitle, newGenre, found)) {
-//	}
-//
-//	inFile.close();
-//	outFile.close();
-//
-//	if (found) {
-//		replaceFileWithTemp(fileName);
-//	}
-//
-//	return found;
-//}
+//Function to update the title in a line
+bool updateGenreInLine(char* line, const char* newGenre) {
+	const char* firstDelimiter = myStrStr(line, " | ");
+	if (!firstDelimiter) {
+		return false;
+	}
+
+	const char* secondDelimiter = myStrStr(firstDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, " | ");
+	if (!secondDelimiter) {
+		return false; 
+	}
+
+	const char* thirdDelimiter = myStrStr(secondDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, " | ");
+	if (!thirdDelimiter) {
+		return false;
+	}
+
+	const char* genreStart = secondDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS;
+	int oldLen = thirdDelimiter - genreStart;
+	int newLen = findTextLen(newGenre);
+
+	int diff = newLen - oldLen;
+	if (diff > 0) {
+		for (int i = MAX_LEN_LINE - 1; i >= (thirdDelimiter - line); --i) {
+			line[i + diff] = line[i];
+		}
+	}
+	else if (diff < 0) {
+		for (int i = (thirdDelimiter - line); i < MAX_LEN_LINE; ++i) {
+			line[i + diff] = line[i];
+		}
+	}
+
+	for (int i = 0; i < newLen; ++i) {
+		line[genreStart - line + i] = newGenre[i];
+	}
+
+	return true;
+}
+
+
+bool replaceMovieGenre(const char* oldTitle, const char* newGenre, const char* fileName) {
+	std::ifstream inFile(fileName);
+	if (!inFile.is_open()) {
+		std::cerr << fileName << " couldn't be opened!" << std::endl;
+		return false;
+	}
+
+	std::ofstream outFile("temp.txt");
+	if (!outFile.is_open()) {
+		std::cerr << "The temporary file couldn't be opened!" << std::endl;
+		inFile.close();
+		return false;
+	}
+
+	bool genreUpdated = false;
+	char line[MAX_LEN_LINE];
+
+	while (inFile.getline(line, MAX_LEN_LINE)) {
+		if (myStrStr(line, oldTitle)) {
+			if (updateGenreInLine(line, newGenre)) {
+				genreUpdated = true;
+			}
+		}
+
+		outFile << line << std::endl;
+	}
+
+	inFile.close();
+	outFile.close();
+
+	if (genreUpdated) {
+		std::ifstream tempFile("temp.txt");
+		std::ofstream originalFile(fileName, std::ios::trunc);
+
+		if (!tempFile.is_open() || !originalFile.is_open()) {
+			std::cerr << "Error: Could not replace the original file." << std::endl;
+			return false;
+		}
+
+		while (tempFile.getline(line, MAX_LEN_LINE)) {
+			originalFile << line << std::endl;
+		}
+
+		tempFile.close();
+		originalFile.close();
+	}
+
+	return genreUpdated;
+}
+
 
 //Change movie director
 //void updateLineWithNewDirector(char* line, const char* newDirector) {
@@ -1203,23 +1239,21 @@ int main() {
 						std::cout << "The operation wasn't successful!" << std::endl;
 					}
 				}
-				/*else if (myStrCmp(toLower(option), "genre") == 0) {
+				else if (myStrCmp(toLower(option), "genre") == 0) {
 					std::cout << "Enter the movie you want to change the genre of: ";
 					char movieToChangeGenreOf[MAX_LEN_MOVIE_TITLES];
-					std::cin.ignore();
 					std::cin.getline(movieToChangeGenreOf, MAX_LEN_MOVIE_TITLES);
 					char newGenre[MAX_LEN_GENRE];
 					std::cout << "Enter the new genre: ";
-					std::cin.ignore();
 					std::cin.getline(newGenre, MAX_LEN_GENRE);
 
-					if (updateMovieGenre(movieToChangeGenreOf, newGenre, fileName)) {
+					if (replaceMovieGenre(movieToChangeGenreOf, newGenre, fileName)) {
 						std::cout << "The genre of \"" << movieToChangeGenreOf << "\" has been changed successfully!" << std::endl;
 					}
 					else {
 						std::cout << "The operation wasn't successful!" << std::endl;
 					}
-				}*/
+				}
 				/*else if (myStrCmp(toLower(option), "director") == 0) {
 					std::cout << "Enter the movie you want to change the director of: ";
 					char movieToChangeTheDirectorOf[MAX_LEN_MOVIE_TITLES];
