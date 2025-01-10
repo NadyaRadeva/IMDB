@@ -54,6 +54,8 @@ bool updateReleaseYearInLine(char* line, int newReleaseYear);
 bool updateGenreInLine(char* line, const char* newGenre);
 //Function that replaces the current director of a movie with a new one (in line)
 bool updateDirectorInLine(char* line, const char* newDirector);
+//Function that replaces the current director of a movie with a new one (in line)
+bool updateMovieCastInLine(char* line, const char* newCast);
 
 int countLinesInFile(const char* fileName);
 void myStrCpy(const char* source, char* dest);
@@ -76,11 +78,11 @@ bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fi
 bool updateReleaseYear(const char* title, int newReleaseYear, const char* fileName);
 bool updateMovieGenre(const char* title, const char* newGenre, const char* fileName);
 bool updateMovieDirector(const char* title, const char* newDirector, const char* fileName);
+bool updateMovieCast(const char* title, const char* newCast, const char* fileName);
 
-
-//bool deleteMovie(std::ifstream& myFile, std::ofstream& tempFile, const char* title);
-//bool replaceOriginalFile(const char* fileName);
-//int deleteMovieByTitle(const char* title, const char* fileName);
+bool deleteMovie(std::ifstream& myFile, std::ofstream& tempFile, const char* title);
+bool replaceOriginalFile(const char* fileName);
+int deleteMovieByTitle(const char* title, const char* fileName);
 
 
 //Function that checks if a character is letter
@@ -348,44 +350,46 @@ void myStrCpy(const char* source, char* dest) {
 	*dest = '\0';
 }
 
+void sortMoviesByTitle(char** movies, int movieCount);
+char** readAndSortMovies(const char* fileName, int& movieCount) {
+	std::ifstream file(fileName);
+	if (!file.is_open()) {
+		std::cerr << "File could not be opened!" << std::endl;
+		movieCount = 0;
+		return nullptr;
+	}
 
-//char** readMoviesFromFile(const char* fileName, int& movieCount) {
-//	std::ifstream myFile(fileName);
-//	if (!myFile.is_open()) {
-//		std::cerr << fileName << " couldn't be opened!" << std::endl;
-//		return nullptr;
-//	}
-//
-//	int capacity = 10;
-//	movieCount = 0;
-//	char** movies = new char* [capacity];
-//
-//	char buffer[MAX_LEN_LINE];
-//	while (myFile.getline(buffer, MAX_LEN_LINE)) {
-//		if (movieCount == capacity) {
-//			capacity *= 2;
-//			char** newMovies = new char* [capacity];
-//			for (size_t i = 0; i < movieCount; ++i) {
-//				newMovies[i] = movies[i];
-//			}
-//			delete[] movies;
-//			movies = newMovies;
-//		}
-//
-//		movies[movieCount] = new char[findTextLen(buffer) + 1];
-//		myStrCpy(movies[movieCount], buffer);
-//		++movieCount;
-//	}
-//
-//	myFile.close();
-//
-//	return movies;
-//}
+	int capacity = 10;
+	movieCount = 0;
+	char** movies = new char* [capacity];
+	char line[MAX_LEN_LINE];
 
+	while (file.getline(line, sizeof(line))) {
+		std::cout << "Read line: [" << line << "]" << std::endl; // Debugging line
+
+		if (movieCount >= capacity) {
+			capacity *= 2;
+			char** newMovies = new char* [capacity];
+			for (int i = 0; i < movieCount; ++i) {
+				newMovies[i] = movies[i];
+			}
+			delete[] movies;
+			movies = newMovies;
+		}
+
+		int len = strlen(line) + 1;  // Include null terminator
+		movies[movieCount] = new char[len];
+		myStrCpy(movies[movieCount], line);  // Copy line into movies array
+		++movieCount;
+	}
+
+	file.close();
+	return movies;
+}
 
 void printMovies(char** movies, int movieCount) {
 	for (int i = 0; i < movieCount; ++i) {
-		std::cout << movies[i] << std::endl;
+		std::cout << "Movie " << (i + 1) << ": " << movies[i] << std::endl;
 	}
 }
 
@@ -1090,21 +1094,32 @@ bool updateMovieRating(const char* title, int newRating, const char* fileName) {
 
 
 //Sort movies by title
-//void sortMoviesByTitle(char** movies, int movieCount) {
-//	for (int i = 0; i < movieCount - 1; ++i) {
-//		int minIndex = i;
-//		for (int j = i + 1; j < movieCount; ++j) {
-//			if (myStrCmp(movies[j], movies[minIndex]) < 0) {
-//				minIndex = j;
-//			}
-//		}
-//		if (minIndex != i) {
-//			char* temp = movies[i];
-//			movies[i] = movies[minIndex];
-//			movies[minIndex] = temp;
-//		}
-//	}
-//}
+int strCmpTitles(const char* str1, const char* str2) {
+	while (*str1 != '\0' && *str1 != '|' && *str2 != '\0' && *str2 != '|') {
+		if (*str1 < *str2) return -1;
+		if (*str1 > *str2) return 1;
+		++str1;
+		++str2;
+	}
+	return 0;
+}
+
+void sortMoviesByTitle(char** movies, int movieCount) {
+	for (int i = 0; i < movieCount - 1; ++i) {
+		int minIndex = i;
+		for (int j = i + 1; j < movieCount; ++j) {
+			if (strCmpTitles(movies[j], movies[minIndex]) < 0) {
+				minIndex = j;
+			}
+		}
+		if (minIndex != i) {
+			char* temp = movies[i];
+			movies[i] = movies[minIndex];
+			movies[minIndex] = temp;
+		}
+	}
+}
+
 
 //Sort movies by rating
 //int extractRating(const char* movie) {
@@ -1235,45 +1250,60 @@ std::ofstream createTempFile() {
 	return tempFile;
 }
 
-bool deleteMovie(std::ifstream& myFile, std::ofstream& tempFile, const char* title) {
+bool deleteMovie(std::ifstream& inFile, std::ofstream& outFile, const char* title) {
 	char line[MAX_LEN_LINE];
 	bool found = false;
 
-	while (myFile.getline(line, sizeof(line))) {
-		if (contains(line, title)) {
+	while (inFile.getline(line, MAX_LEN_LINE)) {
+		if (myStrStr(line, title)) {
 			found = true;
+			continue; 
 		}
-		else {
-			tempFile << line << std::endl;
-		}
+		outFile << line << '\n';
 	}
 
 	return found;
 }
 
-bool replaceOriginalFile(const char* fileName) {
-	if (remove(fileName) != 0) {
-		std::cerr << "Error deleting the original file!" << std::endl;
+
+bool replaceOriginalFile(const char* originalFileName, const char* tempFileName) {
+	std::ifstream tempFile(tempFileName);
+	if (!tempFile.is_open()) {
+		std::cerr << "Error: Could not open the temporary file!" << std::endl;
 		return false;
 	}
 
-	if (rename("temp.txt", fileName) != 0) {
-		std::cerr << "Error renaming the temporary file!" << std::endl;
+	std::ofstream originalFile(originalFileName, std::ios::trunc);
+	if (!originalFile.is_open()) {
+		std::cerr << "Error: Could not open the original file!" << std::endl;
+		tempFile.close();
 		return false;
 	}
+
+	char line[MAX_LEN_LINE];
+	
+	while (tempFile.getline(line, MAX_LEN_LINE)) {
+		originalFile << line << std::endl;
+	}
+
+	tempFile.close();
+	originalFile.close();
 
 	return true;
 }
 
+
 int deleteMovieByTitle(const char* title, const char* fileName) {
 	std::ifstream myFile(fileName);
-
 	if (!myFile.is_open()) {
+		std::cerr << "Error: Could not open the file '" << fileName << "'!" << std::endl;
 		return 1;
 	}
 
 	std::ofstream tempFile = createTempFile();
 	if (!tempFile.is_open()) {
+		std::cerr << "Error: Could not create a temporary file!" << std::endl;
+		myFile.close();
 		return 1;
 	}
 
@@ -1286,14 +1316,15 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 		return 0;
 	}
 
-	if (!replaceOriginalFile(fileName)) {
+	if (!replaceOriginalFile(fileName, "temp.txt")) {
+		std::cerr << "Error: Could not replace the original file!" << std::endl;
 		return 1;
 	}
 
-	std::cout << title << " has been successfully deleted!" << std::endl;
-
+	std::cout << "'" << title << "' has been successfully deleted!" << std::endl;
 	return 0;
 }
+
 
 int main() {
 	char fileName[19] = "MovieDataBase.txt";
@@ -1400,8 +1431,8 @@ int main() {
 		std::cout << "4. View all movies" << std::endl;
 		std::cout << "5. Change movie data" << std::endl;
 		std::cout << "6. Delete movie" << std::endl;
-		std::cout << "7. Sort movies by rating" << std::endl;
-		std::cout << "8. Sort movies by title" << std::endl;
+		std::cout << "7. Sort movies by title" << std::endl;
+		std::cout << "8. Sort movies by rating" << std::endl;
 		std::cout << "9. Filter movies by rating" << std::endl;
 		std::cout << "If you want to exit the program, press - \"CLOSE\"!" << std::endl;
 
@@ -1591,14 +1622,22 @@ int main() {
 
 				std::cout << std::endl;
 			}
-			/*else if (myStrCmp(command, "8") == 0) {
-				int moviesCountToSortByT = countLinesInFile(fileName);
-				char** moviesToSortByTitle = readMoviesFromFile(fileName, moviesCountToSortByT);
-				std::cout << "Movies sorted by title:" << std::endl;
-				sortMoviesByTitle(moviesToSortByTitle, moviesCountToSortByT);
-				printMovies(moviesToSortByTitle, moviesCountToSortByT);
-				freeMovies(moviesToSortByTitle, moviesCountToSortByT);
-			}*/
+			//if (myStrCmp(command, "7") == 0) { // Sort movies by title
+			//	int moviesCounter = 0;
+			//	char** movies = readAndSortMovies(fileName, moviesCounter);
+
+			//	if (!movies) {
+			//		std::cerr << "Failed to load movies." << std::endl;
+			//		continue;
+			//	}
+
+			//	sortMoviesByTitle(movies, moviesCounter);
+
+			//	std::cout << "Movies sorted by title:" << std::endl;
+			//	printMovies(movies, moviesCounter);
+
+			//	freeMovies(movies, moviesCounter);
+			//}
 			/*else if (myStrCmp(command, "8") == 0) {
 				int moviesCountToSortByR = countLinesInFile(fileName);
 				char** moviesToSortByRating = readMoviesFromFile(fileName, moviesCountToSortByR);
