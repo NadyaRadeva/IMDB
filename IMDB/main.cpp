@@ -79,9 +79,10 @@ bool updateReleaseYear(const char* title, int newReleaseYear, const char* fileNa
 bool updateMovieGenre(const char* title, const char* newGenre, const char* fileName);
 bool updateMovieDirector(const char* title, const char* newDirector, const char* fileName);
 bool updateMovieCast(const char* title, const char* newCast, const char* fileName);
-
-bool deleteMovie(std::ifstream& myFile, std::ofstream& tempFile, const char* title);
-bool replaceOriginalFile(const char* fileName);
+//Delete movie
+std::ofstream createTempFile();
+bool deleteMovie(std::ifstream& inFile, std::ofstream& outFile, const char* title);
+bool replaceOriginalFile(const char* originalFileName, const char* tempFileName);
 int deleteMovieByTitle(const char* title, const char* fileName);
 
 
@@ -1096,8 +1097,12 @@ bool updateMovieRating(const char* title, int newRating, const char* fileName) {
 //Sort movies by title
 int strCmpTitles(const char* str1, const char* str2) {
 	while (*str1 != '\0' && *str1 != '|' && *str2 != '\0' && *str2 != '|') {
-		if (*str1 < *str2) return -1;
-		if (*str1 > *str2) return 1;
+		if (*str1 < *str2) {
+			return -1;
+		}
+		if (*str1 > *str2) {
+			return 1;
+		}
 		++str1;
 		++str2;
 	}
@@ -1265,7 +1270,6 @@ bool deleteMovie(std::ifstream& inFile, std::ofstream& outFile, const char* titl
 	return found;
 }
 
-
 bool replaceOriginalFile(const char* originalFileName, const char* tempFileName) {
 	std::ifstream tempFile(tempFileName);
 	if (!tempFile.is_open()) {
@@ -1292,7 +1296,6 @@ bool replaceOriginalFile(const char* originalFileName, const char* tempFileName)
 	return true;
 }
 
-
 int deleteMovieByTitle(const char* title, const char* fileName) {
 	std::ifstream myFile(fileName);
 	if (!myFile.is_open()) {
@@ -1302,7 +1305,7 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 
 	std::ofstream tempFile = createTempFile();
 	if (!tempFile.is_open()) {
-		std::cerr << "Error: Could not create a temporary file!" << std::endl;
+		std::cerr << fileName << " couldn't be opened!" << std::endl;
 		myFile.close();
 		return 1;
 	}
@@ -1317,7 +1320,7 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 	}
 
 	if (!replaceOriginalFile(fileName, "temp.txt")) {
-		std::cerr << "Error: Could not replace the original file!" << std::endl;
+		std::cerr << "The original file couldn't be replaced!" << std::endl;
 		return 1;
 	}
 
