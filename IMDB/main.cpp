@@ -351,55 +351,6 @@ void myStrCpy(const char* source, char* dest) {
 	*dest = '\0';
 }
 
-void sortMoviesByTitle(char** movies, int movieCount);
-char** readAndSortMovies(const char* fileName, int& movieCount) {
-	std::ifstream file(fileName);
-	if (!file.is_open()) {
-		std::cerr << "File could not be opened!" << std::endl;
-		movieCount = 0;
-		return nullptr;
-	}
-
-	int capacity = 10;
-	movieCount = 0;
-	char** movies = new char* [capacity];
-	char line[MAX_LEN_LINE];
-
-	while (file.getline(line, sizeof(line))) {
-		std::cout << "Read line: [" << line << "]" << std::endl; // Debugging line
-
-		if (movieCount >= capacity) {
-			capacity *= 2;
-			char** newMovies = new char* [capacity];
-			for (int i = 0; i < movieCount; ++i) {
-				newMovies[i] = movies[i];
-			}
-			delete[] movies;
-			movies = newMovies;
-		}
-
-		int len = strlen(line) + 1;  // Include null terminator
-		movies[movieCount] = new char[len];
-		myStrCpy(movies[movieCount], line);  // Copy line into movies array
-		++movieCount;
-	}
-
-	file.close();
-	return movies;
-}
-
-void printMovies(char** movies, int movieCount) {
-	for (int i = 0; i < movieCount; ++i) {
-		std::cout << "Movie " << (i + 1) << ": " << movies[i] << std::endl;
-	}
-}
-
-void freeMovies(char** movies, int movieCount) {
-	for (int i = 0; i < movieCount; ++i) {
-		delete[] movies[i];
-	}
-	delete[] movies;
-}
 
 //bool checkIfRatingIsValid(const char* rating) {
 //	if (!rating || rating[0] == '\0') {
@@ -1095,34 +1046,70 @@ bool updateMovieRating(const char* title, int newRating, const char* fileName) {
 
 
 //Sort movies by title
-int strCmpTitles(const char* str1, const char* str2) {
-	while (*str1 != '\0' && *str1 != '|' && *str2 != '\0' && *str2 != '|') {
-		if (*str1 < *str2) {
-			return -1;
-		}
-		if (*str1 > *str2) {
-			return 1;
-		}
-		++str1;
-		++str2;
+char** readMoviesFromFile(const char* fileName, int& movieCount) {
+	if (movieCount == 0) {
+		std::cerr << "No movies found in the file!" << std::endl;
+		return nullptr;
 	}
-	return 0;
+
+	std::ifstream myFile(fileName);
+	if (!myFile.is_open()) {
+		std::cerr << fileName << " couldn't be opened!" << std::endl;
+		return nullptr;
+	}
+
+	char** movies = new char* [movieCount];
+	for (int i = 0; i < movieCount; ++i) {
+		movies[i] = new char[MAX_LEN_LINE];
+	}
+
+	int index = 0;
+	while (index < movieCount && myFile.getline(movies[index], MAX_LEN_LINE)) {
+		++index;
+	}
+
+	if (index < movieCount) {
+		std::cerr << "File had fewer movies than expected. Only " << index << " movies were read." << std::endl;
+	}
+
+	myFile.close();
+
+	return movies;
 }
 
 void sortMoviesByTitle(char** movies, int movieCount) {
 	for (int i = 0; i < movieCount - 1; ++i) {
 		int minIndex = i;
+
 		for (int j = i + 1; j < movieCount; ++j) {
-			if (strCmpTitles(movies[j], movies[minIndex]) < 0) {
+			const char* title1 = movies[minIndex];
+			const char* title2 = movies[j];
+
+			int compareResult = myStrCmp(title1, title2);
+			if (compareResult > 0) {
 				minIndex = j;
 			}
 		}
+
 		if (minIndex != i) {
 			char* temp = movies[i];
 			movies[i] = movies[minIndex];
 			movies[minIndex] = temp;
 		}
 	}
+}
+
+void printMovies(char** movies, int movieCount) {
+	for (int i = 0; i < movieCount; ++i) {
+		std::cout << movies[i] << std::endl;
+	}
+}
+
+void freeMovies(char** movies, int movieCount) {
+	for (int i = 0; i < movieCount; ++i) {
+		delete[] movies[i];
+	}
+	delete[] movies;
 }
 
 
@@ -1370,14 +1357,22 @@ int main() {
 			else if (myStrCmp(command, "3") == 0) {
 				showAllMoviesInDatabase(fileName);
 			}
-			/*else if (myStrCmp(command, "4") == 0) {
-				int moviesCountT = countLinesInFile(fileName);
-				char** moviesT = readMoviesFromFile(fileName, moviesCountT);
+			else if (myStrCmp(command, "4") == 0) {
+				int movieCount = countLinesInFile(fileName);
+				char** movies = readMoviesFromFile(fileName, movieCount);
+
+				if (!movies) {
+					std::cerr << "Failed to load movies from file!" << std::endl;
+					return 1;
+				}
+
+				sortMoviesByTitle(movies, movieCount);
+
 				std::cout << "Movies sorted by title:" << std::endl;
-				sortMoviesByTitle(moviesT, moviesCountT);
-				printMovies(moviesT, moviesCountT);
-				freeMovies(moviesT, moviesCountT);
-			}*/
+				printMovies(movies, movieCount);
+
+				freeMovies(movies, movieCount);
+			}
 			/*else if (myStrCmp(command, "5") == 0) {
 				int moviesCountR = countLinesInFile(fileName);
 				char** moviesR = readMoviesFromFile(fileName, moviesCountR);
@@ -1625,22 +1620,22 @@ int main() {
 
 				std::cout << std::endl;
 			}
-			//if (myStrCmp(command, "7") == 0) { // Sort movies by title
-			//	int moviesCounter = 0;
-			//	char** movies = readAndSortMovies(fileName, moviesCounter);
+			if (myStrCmp(command, "7") == 0) {
+				int movieCount = countLinesInFile(fileName);
+				char** movies = readMoviesFromFile(fileName, movieCount);
 
-			//	if (!movies) {
-			//		std::cerr << "Failed to load movies." << std::endl;
-			//		continue;
-			//	}
+				if (!movies) {
+					std::cerr << "Failed to load movies from file!" << std::endl;
+					return 1;
+				}
 
-			//	sortMoviesByTitle(movies, moviesCounter);
+				sortMoviesByTitle(movies, movieCount);
 
-			//	std::cout << "Movies sorted by title:" << std::endl;
-			//	printMovies(movies, moviesCounter);
+				std::cout << "Movies sorted by title:" << std::endl;
+				printMovies(movies, movieCount);
 
-			//	freeMovies(movies, moviesCounter);
-			//}
+				freeMovies(movies, movieCount);
+			}
 			/*else if (myStrCmp(command, "8") == 0) {
 				int moviesCountToSortByR = countLinesInFile(fileName);
 				char** moviesToSortByRating = readMoviesFromFile(fileName, moviesCountToSortByR);
