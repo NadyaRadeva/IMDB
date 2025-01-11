@@ -1620,7 +1620,7 @@ int main() {
 
 				std::cout << std::endl;
 			}
-			if (myStrCmp(command, "7") == 0) {
+			else if (myStrCmp(command, "7") == 0) {
 				int movieCount = countLinesInFile(fileName);
 				char** movies = readMoviesFromFile(fileName, movieCount);
 
