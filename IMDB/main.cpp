@@ -17,7 +17,7 @@ const int MAX_LEN_MOVIE_DIRECTOR = 500;
 const int MAX_LEN_MOVIE_CAST = 4000;
 const int MIN_RATING = 0;
 const int MAX_RATING = 10;
-const int MAX_LEN_RATING = 3;
+const int MAX_LEN_RATING = 4;
 const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5; // MAX_LEN_MOVIE_TITLES + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + RATING (MAX - 2 digits) + 10 spaces + 5 lines
 
 //Base Functions
