@@ -10,19 +10,21 @@ const int TO_CHAR = '0';
 const int TO_INTEGER = -'0';
 const int DISTANCE_BETWEEN_MOVIE_PARAMETERS = 3; // " | "
 const char* DELIMITER = " | ";
-const int DEFAULT_RATING = 5;
+const double DEFAULT_RATING = 5.0;
+const double EPSILON = 0.001;
 const int MAX_LEN_GENRE = 400;
 const int MAX_LEN_MOVIE_TITLES = 1000;
 const int MAX_LEN_MOVIE_DIRECTOR = 500;
 const int MAX_LEN_MOVIE_CAST = 4000;
-const int MIN_RATING = 0;
-const int MAX_RATING = 10;
-const int MAX_LEN_RATING = 4;
+const double MIN_RATING = 0.0;
+const double MAX_RATING = 10.0;
+const int MAX_LEN_RATING = 3;
 const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5; // MAX_LEN_MOVIE_TITLES + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + RATING (MAX - 2 digits) + 10 spaces + 5 lines
 
 //Base Functions
 //Simple checks
 bool isLetter(char ch);
+bool isDigit(char ch);
 bool isLowerCase(char ch);
 bool isUpperCase(char ch);
 char toLowerCaseChar(char ch);
@@ -86,9 +88,14 @@ bool replaceOriginalFile(const char* originalFileName, const char* tempFileName)
 int deleteMovieByTitle(const char* title, const char* fileName);
 
 
-//Function that checks if a character is letter
+//Function that checks if a character is a letter
 bool isLetter(char ch) {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
+//Function that checks if a character is a digit
+bool isDigit(char ch) {
+	return (ch >= '0' && ch <= '9');
 }
 
 //Function that checks if a letter is lower case
@@ -1114,70 +1121,64 @@ void freeMovies(char** movies, int movieCount) {
 
 
 //Sort movies by rating
-//double findNumericalValueOfRatings(const char* rating) {
-//	double ratingNum = 0.0;
-//	double partAfterComma = 0.0;
-//	double divisor = 10.0;
-//
-//	int i = 0;
-//	while (rating[i] >= '0' && rating[i] <= '9') {
-//		ratingNum = ratingNum * 10 + (rating[i] - '0');
-//		++i;
-//	}
-//
-//	if (rating[i] == '.') {
-//		++i;
-//		while (rating[i] >= '0' && rating[i] <= '9') {
-//			partAfterComma += (rating[i] - '0') / divisor;
-//			divisor *= 10.0;
-//			++i;
-//		}
-//	}
-//
-//	ratingNum += partAfterComma;
-//
-//	return ratingNum;
-//}
-//
-//double extractRating(const char* movie) {
-//	const char* ratingPart = nullptr;
-//
-//	for (const char* ptr = movie; *ptr != '\0'; ++ptr) {
-//		if (myStrCmp(ptr, DELIMITER)) {
-//			ratingPart = ptr;
-//		}
-//	}
-//
-//	if (!ratingPart) {
-//		std::cerr << "Invalid movie format: " << movie << std::endl;
-//		return 0.0;
-//	}
-//
-//	++ratingPart;
-//
-//	return findNumericalValueOfRatings(ratingPart);
-//}
-//
-//void sortMoviesByRating(char** movies, int movieCount) {
-//	for (int i = 0; i < movieCount - 1; ++i) {
-//		int minIndex = i;
-//
-//		for (int j = i + 1; j < movieCount; ++j) {
-//			double ratingMovie1 = extractRating(movies[minIndex]);
-//			double ratingMovie2 = extractRating(movies[j]);
-//
-//			if (ratingMovie1 < ratingMovie2) {
-//				minIndex = j;
-//			}
-//		}
-//
-//		if (minIndex != i) {
-//			char* temp = movies[i];
-//			movies[i] = movies[minIndex];
-//			movies[minIndex] = temp;
-//		}
-//	}
-//}
+int extractRating(const char* movieData) {
+	int len = findTextLen(movieData); 
+	int ratingStart = -1;
+
+	for (size_t i = len - 1; i >= 0; --i) {
+		if (movieData[i] == ' ') {
+			ratingStart = i + 1;
+			break;
+		}
+	}
+
+	if (ratingStart == -1) {
+		return -1;
+	}
+
+	if (isDigit(movieData[ratingStart])) {
+		int rating = 0;
+		for (size_t i = ratingStart; i < len; ++i) {
+			if (isDigit(movieData[i])) {
+				rating = rating * 10 + (movieData[i] - '0');
+			}
+			else if (movieData[i] == '/') {
+				if (i + 1 < len && movieData[i + 1] == '1' && movieData[i + 2] == '0') {
+					return rating;
+				}
+				else {
+					return -1;
+				}
+			}
+			else {
+				return -1;
+			}
+		}
+	}
+
+	return -1;
+}
+
+void sortMoviesByRating(char** movies, size_t movieCount) {
+	for (size_t i = 0; i < movieCount - 1; ++i) {
+		size_t minIndex = i;
+		double minRating = extractRating(movies[i]);
+
+		for (size_t j = i + 1; j < movieCount; ++j) {
+			double currentRating = extractRating(movies[j]);
+			if (currentRating < minRating) {
+				minIndex = j;
+				minRating = currentRating;
+			}
+		}
+
+		if (minIndex != i) {
+			char* tempMovie = movies[i];
+			movies[i] = movies[minIndex];
+			movies[minIndex] = tempMovie;
+		}
+	}
+}
 
 //void printMovieRatings(char** ratings, int movieCount) {
 //	for (int i = 0; i < movieCount; ++i) {
@@ -1228,46 +1229,43 @@ void freeMovies(char** movies, int movieCount) {
 //
 //	writeLines(fileName, lines, lineCount);
 //	return 0;
-//}
+//}  
 
 //Filter movies by rating
+//void removeEmptyLines(char**& movies, int& movieCount) {
+//	int validCount = 0;
+//
+//	for (size_t i = 0; i < movieCount; ++i) {
+//		if (movies[i][0] != '\0') {
+//			movies[validCount++] = movies[i];
+//		}
+//	}
+//
+//	movieCount = validCount;
+//}
+//
 //void filterMoviesByRating(const char* fileName, int userRating) {
-//	std::ifstream file(fileName);
+//	int movieCount = countLinesInFile(fileName);
+//	char** movies = readMoviesFromFile(fileName, movieCount);
 //
-//	if (!file.is_open()) {
-//		std::cerr << fileName << " couldn't be opened!" << std::endl;
-//		return;
-//	}
+//	removeEmptyLines(movies, movieCount);
 //
-//	char line[MAX_LEN_LINE];
-//	bool found = false;
+//	for (size_t i = 0; i < movieCount; ++i) {
+//		int movieRating = extractRating(movies[i]);
 //
-//	while (file.getline(line, MAX_LEN_LINE)) {
-//		int rating = -1;
-//		int i = 0;
+//		//std::cout << "Movie: " << movies[i] << " | Extracted Rating: " << movieRating << std::endl;
 //
-//		while (line[i] != '\0') {
-//			if (line[i] == '|') {
-//				int j = i + 1;
-//				while (line[j] != '\0' && line[j] >= '0' && line[j] <= '9') {
-//					rating = rating * 10 + (line[j] + TO_INTEGER);
-//					++j;
-//				}
-//			}
-//			++i;
+//		if (movieRating == -1) {
+//			continue;
 //		}
 //
-//		if (rating >= userRating) {
-//			found = true;
-//			std::cout << line << std::endl;
+//		if (userRating - EPSILON <= movieRating && movieRating <= userRating + EPSILON) {
+//			std::cout << movies[i] << std::endl;
 //		}
 //	}
 //
-//	if (!found) {
-//		std::cout << "No movies found with a rating >= " << userRating << "." << std::endl;
-//	}
-//
-//	file.close();
+//	printMovies(movies, movieCount);
+//	freeMovies(movies, movieCount);
 //}
 
 //Delete movie
@@ -1411,14 +1409,14 @@ int main() {
 
 				freeMovies(movies, movieCount);
 			}
-			/*else if (myStrCmp(command, "5") == 0) {
+			else if (myStrCmp(command, "5") == 0) {
 				int moviesCountR = countLinesInFile(fileName);
 				char** moviesR = readMoviesFromFile(fileName, moviesCountR);
 				std::cout << "Movies sorted by rating: " << std::endl;
 				sortMoviesByRating(moviesR, moviesCountR);
 				printMovies(moviesR, moviesCountR);
 				freeMovies(moviesR, moviesCountR);
-			}*/
+			}
 			/*else if (myStrCmp(command, "6") == 0) {
 				char movieTitle6[MAX_LEN_MOVIE_TITLES];
 				std::cout << "Movie you want to rate: ";
@@ -1675,17 +1673,24 @@ int main() {
 				freeMovies(movies, movieCount);
 			}
 			else if (myStrCmp(command, "8") == 0) {
-				int moviesCountToSortByR = countLinesInFile(fileName);
-				char** moviesToSortByRating = readMoviesFromFile(fileName, moviesCountToSortByR);
-				std::cout << "Movies sorted by rating: " << std::endl;
-				sortMoviesByRating(moviesToSortByRating, moviesCountToSortByR);
-				printMovies(moviesToSortByRating, moviesCountToSortByR);
-				freeMovies(moviesToSortByRating, moviesCountToSortByR);
+				int movieCount = countLinesInFile(fileName);
+				char** movies = readMoviesFromFile(fileName, movieCount);
+				sortMoviesByRating(movies, movieCount);
+
+				std::cout << "Movies after sorting by rating:";
+				printMovies(movies, movieCount);
+				freeMovies(movies, movieCount);
+
+				std::cout << std::endl;
 			}
 			/*else if (myStrCmp(command, "9") == 0) {
-				int rating;
-				std::cout << "Enter rating you want to filter the movies by: ";
+				double rating;
+				std::cout << "Enter the rating you want to filter the movies by: ";
 				std::cin >> rating;
+				if (rating < 0 || rating > 10) {
+					std::cerr << "Invalid input! The rating you are searching for should be a positive real number!" << std::endl;
+					return 1;
+				}
 
 				filterMoviesByRating(fileName, rating);
 			}*/
