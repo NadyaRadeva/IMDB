@@ -1,4 +1,4 @@
-<h1> IMBd database </h1>
+<h1> IMDb database </h1>
 <p>This project was created for the Introduction to Programming - Practicum course at the Faculty of Mathematics and Informatics, Sofia University, Bulgaria. </p>
 
 <p>The project simulates a popular and widely-used database for movies, television series, actors, directors, and other industry professionals, akin to IMDb.</p>
@@ -28,6 +28,6 @@
 
 <p><h4>7. Sort Movies by Rating and Title:</h4> Accessible to both the orinary users and the administrators, this feature allows clients to view movies sorted by their rating or title in ascending or descending order.</p>
 
-<p><h4>Filter Movies by Rating:</h4> Available to both the ordinary users and administrators, this functionality enables clients to filter and display movies that have a rating equal to or higher than the one specified by the client.</p>
+<p><h4>8. Filter Movies by Rating:</h4> Available to both the ordinary users and administrators, this functionality enables clients to filter and display movies that have a rating equal to or higher than the one specified by the client.</p>
 
 <p><h4>9. Rate Movies:</h4> This feature, visible only to ordinary users, allows them to rate movies on a scale from 1 to 10. The ratings are stored, and the overall rating for each movie is calculated by averaging the ratings based on the total number of users who have rated the movie.</p>
