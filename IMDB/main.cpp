@@ -11,8 +11,8 @@ const int TO_CHAR = '0';
 const int TO_INTEGER = -'0';
 const int DISTANCE_BETWEEN_MOVIE_PARAMETERS = 3; // " | "
 const char* DELIMITER = " | ";
+const int MAX_NUMBER_OF_DELIMITERS = 6;
 const double DEFAULT_RATING = 5.0;
-const double EPSILON = 0.001;
 const int MAX_LEN_GENRE = 400;
 const int MAX_LEN_MOVIE_TITLES = 1000;
 const int MAX_LEN_MOVIE_DIRECTOR = 500;
@@ -315,25 +315,19 @@ char* myStrStr(const char* str1, const char* str2) {
 	return nullptr;
 }
 
-//const char* findDelimiter(const char* str, int n, char delimiter) {
-//	const char* pos = str;
-//	while (*pos && n > 0) {
-//		if (*pos == delimiter) {
-//			n--;
-//		}
-//		pos++;
-//	}
-//
-//	return (n == 0) ? pos : nullptr;
-//}
-
-//Function that counts how many lines there are in our text file (movie database)
-int countLinesInFile(const char* fileName) {
+std::ifstream readMyFile(const char* fileName) {
 	std::ifstream myFile(fileName);
 	if (!myFile.is_open()) {
 		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return -1;
+		return std::ifstream();
 	}
+
+	return myFile;
+}
+
+//Function that counts how many lines there are in our text file (movie database)
+int countLinesInFile(const char* fileName) {
+	std::ifstream myFile = readMyFile(fileName);
 
 	int lineCount = 0;
 	char lines[MAX_LEN_LINE];
@@ -359,28 +353,14 @@ void myStrCpy(const char* source, char* dest) {
 	*dest = '\0';
 }
 
-
-//bool checkIfRatingIsValid(const char* rating) {
-//	if (!rating || rating[0] == '\0') {
-//		return false;
-//	}
-//
-//	if (rating[0] < '0' || rating[0] > '9') {
-//		return false;
-//	}
-//
-//	if (rating[1] == '\0') {
-//		return rating[0] >= '1' && rating[0] <= '9';
-//	}
-//
-//	if (rating[0] == '1' && rating[1] == '0' && rating[2] == '\0') {
-//		return true;
-//	}
-//
-//	return false;
-//}
-
-
+std::ofstream createTempFile() {
+	std::ofstream tempFile("temp.txt");
+	if (!tempFile.is_open()) {
+		std::cerr << "Temporary file couldn't be created!" << std::endl;
+		return std::ofstream();
+	}
+	return tempFile;
+}
 
 
 //Add new movie to the database
@@ -461,12 +441,7 @@ int findMovieByTitle(const char* title, const char* fileName) {
 
 //Show all movies on screen
 int showAllMoviesInDatabase(const char* fileName) {
-	std::ifstream myFile(fileName);
-
-	if (!myFile) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return 1;
-	}
+	std::ifstream myFile = readMyFile(fileName);
 
 	char line[MAX_LEN_LINE];
 
@@ -510,18 +485,9 @@ bool updateTitleInLine(char* line, const char* oldTitle, const char* newTitle) {
 }
 
 bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fileName) {
-	std::ifstream inFile(fileName);
-	if (!inFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return 1;
-	}
+	std::ifstream inFile = readMyFile(fileName);
 
-	std::ofstream outFile("temp.txt");
-	if (!outFile.is_open()) {
-		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		inFile.close();
-		return false;
-	}
+	std::ofstream outFile = createTempFile();
 
 	bool titleUpdated = false;
 	char line[MAX_LEN_LINE];
@@ -531,10 +497,8 @@ bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fi
 			updateTitleInLine(line, oldTitle, newTitle);
 			titleUpdated = true;
 		}
-
 		outFile << line << std::endl;
 	}
-
 	inFile.close();
 	outFile.close();
 
@@ -599,52 +563,35 @@ bool updateReleaseYearInLine(char* line, int newReleaseYear) {
 }
 
 bool updateReleaseYear(const char* title, int newReleaseYear, const char* fileName) {
-	std::ifstream inFile(fileName);
-	if (!inFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return false;
-	}
+	std::ifstream inFile = readMyFile(fileName);
 
-	std::ofstream outFile("temp.txt");
-	if (!outFile.is_open()) {
-		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		inFile.close();
-		return false;
-	}
+	std::ofstream outFile = createTempFile();
 
 	bool releaseYearUpdated = false;
 	char line[MAX_LEN_LINE];
-
 	while (inFile.getline(line, MAX_LEN_LINE)) {
 		if (myStrStr(line, title)) {
 			if (updateReleaseYearInLine(line, newReleaseYear)) {
 				releaseYearUpdated = true;
 			}
 		}
-
 		outFile << line << std::endl;
 	}
-
 	inFile.close();
 	outFile.close();
-
 	if (releaseYearUpdated) {
 		std::ifstream tempFile("temp.txt");
 		std::ofstream originalFile(fileName, std::ios::trunc);
-
 		if (!tempFile.is_open() || !originalFile.is_open()) {
 			std::cerr << fileName << " couldn't be replaced!" << std::endl;
 			return false;
 		}
-
 		while (tempFile.getline(line, MAX_LEN_LINE)) {
 			originalFile << line << std::endl;
 		}
-
 		tempFile.close();
 		originalFile.close();
 	}
-
 	return releaseYearUpdated;
 }
 
@@ -690,22 +637,11 @@ bool updateGenreInLine(char* line, const char* newGenre) {
 }
 
 bool updateMovieGenre(const char* title, const char* newGenre, const char* fileName) {
-	std::ifstream inFile(fileName);
-	if (!inFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return false;
-	}
-
-	std::ofstream outFile("temp.txt");
-	if (!outFile.is_open()) {
-		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		inFile.close();
-		return false;
-	}
+	std::ifstream inFile = readMyFile(fileName);
+	std::ofstream outFile = createTempFile();
 
 	bool genreUpdated = false;
 	char line[MAX_LEN_LINE];
-
 	while (inFile.getline(line, MAX_LEN_LINE)) {
 		if (myStrStr(line, title)) {
 			if (updateGenreInLine(line, newGenre)) {
@@ -715,27 +651,21 @@ bool updateMovieGenre(const char* title, const char* newGenre, const char* fileN
 
 		outFile << line << std::endl;
 	}
-
 	inFile.close();
 	outFile.close();
-
 	if (genreUpdated) {
 		std::ifstream tempFile("temp.txt");
 		std::ofstream originalFile(fileName, std::ios::trunc);
-
 		if (!tempFile.is_open() || !originalFile.is_open()) {
 			std::cerr << fileName << " couldn't be replaced!" << std::endl;
 			return false;
 		}
-
 		while (tempFile.getline(line, MAX_LEN_LINE)) {
 			originalFile << line << std::endl;
 		}
-
 		tempFile.close();
 		originalFile.close();
 	}
-
 	return genreUpdated;
 }
 
@@ -785,18 +715,9 @@ bool updateDirectorInLine(char* line, const char* newDirector) {
 }
 
 bool updateMovieDirector(const char* title, const char* newDirector, const char* fileName) {
-	std::ifstream inFile(fileName);
-	if (!inFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return false;
-	}
+	std::ifstream inFile = readMyFile(fileName);
 
-	std::ofstream outFile("temp.txt");
-	if (!outFile.is_open()) {
-		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		inFile.close();
-		return false;
-	}
+	std::ofstream outFile = createTempFile();
 
 	bool directorUpdated = false;
 	char line[MAX_LEN_LINE];
@@ -877,19 +798,12 @@ bool updateMovieCastInLine(char* line, const char* newCast) {
 }
 
 bool updateMovieCast(const char* title, const char* newCast, const char* fileName) {
-	std::ifstream inFile(fileName);
-	if (!inFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return false;
-	}
-	std::ofstream outFile("temp.txt");
-	if (!outFile.is_open()) {
-		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		inFile.close();
-		return false;
-	}
+	std::ifstream inFile = readMyFile(fileName);
+	std::ofstream outFile = createTempFile();
+
 	bool castUpdated = false;
 	char line[MAX_LEN_LINE];
+
 	while (inFile.getline(line, MAX_LEN_LINE)) {
 		if (myStrStr(line, title)) {
 			if (updateMovieCastInLine(line, newCast)) {
@@ -898,142 +812,103 @@ bool updateMovieCast(const char* title, const char* newCast, const char* fileNam
 		}
 		outFile << line << std::endl;
 	}
+
 	inFile.close();
 	outFile.close();
+
 	if (castUpdated) {
 		std::ifstream tempFile("temp.txt");
 		std::ofstream originalFile(fileName, std::ios::trunc);
+
 		if (!tempFile.is_open() || !originalFile.is_open()) {
 			std::cerr << fileName << " couldn't be replaced!" << std::endl;
 			return false;
 		}
+
 		while (tempFile.getline(line, MAX_LEN_LINE)) {
 			originalFile << line << std::endl;
 		}
 		tempFile.close();
 		originalFile.close();
 	}
+
 	return castUpdated;
 }
 
 //Change movie rating
+void copyNewRating(const char* ratingStr, char* line, int startPos, int newLen) {
+	for (size_t i = 0; i < newLen; ++i) {
+		line[startPos + i] = ratingStr[i];
+	}
+}
+
 bool updateRatingInLine(char* line, int newRating) {
-	const char* firstDelimiter = myStrStr(line, DELIMITER);
-	if (!firstDelimiter) {
+	const char* delimiters[MAX_NUMBER_OF_DELIMITERS];
+	delimiters[0] = myStrStr(line, DELIMITER);
+	for (size_t i = 1; i < MAX_NUMBER_OF_DELIMITERS && delimiters[i - 1]; ++i) {
+		delimiters[i] = myStrStr(delimiters[i - 1] + DISTANCE_BETWEEN_MOVIE_PARAMETERS, (i == MAX_NUMBER_OF_DELIMITERS - 1) ? "/10" : DELIMITER);
+	}
+	if (!delimiters[MAX_NUMBER_OF_DELIMITERS - 1]) {
 		return false;
 	}
 
-	const char* secondDelimiter = myStrStr(firstDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, DELIMITER);
-	if (!secondDelimiter) {
-		return false;
-	}
-
-	const char* thirdDelimiter = myStrStr(secondDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, DELIMITER);
-	if (!thirdDelimiter) {
-		return false;
-	}
-
-	const char* fourthDelimiter = myStrStr(thirdDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, DELIMITER);
-	if (!fourthDelimiter) {
-		return false;
-	}
-
-	const char* fifthDelimiter = myStrStr(fourthDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, DELIMITER);
-	if (!fifthDelimiter) {
-		return false;
-	}
-
-	const char* sixthDelimiter = myStrStr(fifthDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS, "/10");
-	if (!sixthDelimiter) {
-		return false;
-	}
-
-	const char* ratingStart = fifthDelimiter + DISTANCE_BETWEEN_MOVIE_PARAMETERS;
-	int oldLen = sixthDelimiter - ratingStart;
+	const char* ratingStart = delimiters[MAX_NUMBER_OF_DELIMITERS - 2] + DISTANCE_BETWEEN_MOVIE_PARAMETERS;
+	int oldLen = delimiters[MAX_NUMBER_OF_DELIMITERS - 1] - ratingStart;
 	int newLen = countDigitsInNumber(newRating);
-
 	int diff = newLen - oldLen;
 
-	if (diff > 0) {
-		for (size_t i = MAX_LEN_LINE - 1; i >= (sixthDelimiter - line); --i) {
-			if (i + diff < MAX_LEN_LINE) {
-				line[i + diff] = line[i];
-			}
-		}
-	}
-	else if (diff < 0) {
-		for (size_t i = sixthDelimiter - line; i < MAX_LEN_LINE; ++i) {
-			line[i + diff] = line[i];
+	if (diff != 0) {
+		for (size_t i = MAX_LEN_LINE - 1; i >= (delimiters[MAX_NUMBER_OF_DELIMITERS - 1] - line); --i) {
+			if (i + diff < MAX_LEN_LINE) line[i + diff] = line[i];
 		}
 	}
 
 	char* ratingStr = turnRatingToChar(newRating);
-
-	for (size_t i = 0; i < newLen; ++i) {
-		line[ratingStart - line + i] = ratingStr[i];
-	}
-
-	line[ratingStart - line + newLen] = '/';
-	line[ratingStart - line + newLen + 1] = '1';
-	line[ratingStart - line + newLen + 2] = '0';
-
-	line[(sixthDelimiter - line) + diff + 3] = '\0';
-
+	copyNewRating(ratingStr, line, ratingStart - line, newLen);
 	delete[] ratingStr;
+
+	int endPos = ratingStart - line + newLen;
+	line[endPos] = '/';
+	line[endPos + 1] = '1';
+	line[endPos + 2] = '0';
+	line[endPos + 3] = '\0';
 
 	return true;
 }
 
 bool updateMovieRating(const char* title, int newRating, const char* fileName) {
-	std::ifstream inFile(fileName);
-	if (!inFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return false;
-	}
+	std::ifstream inFile = readMyFile(fileName);
+	std::ofstream outFile = createTempFile();
 
-	std::ofstream outFile("temp.txt");
 	if (!outFile.is_open()) {
 		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		inFile.close();
 		return false;
 	}
 
 	bool ratingUpdated = false;
 	char line[MAX_LEN_LINE];
-
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		if (myStrStr(line, title)) {
-			if (updateRatingInLine(line, newRating)) {
-				ratingUpdated = true;
-			}
+		if (!ratingUpdated && myStrStr(line, title)) {
+			ratingUpdated = updateRatingInLine(line, newRating);
 		}
-
 		outFile << line << std::endl;
 	}
-
 	inFile.close();
 	outFile.close();
 
 	if (ratingUpdated) {
 		std::ifstream tempFile("temp.txt");
 		std::ofstream originalFile(fileName, std::ios::trunc);
-
 		if (!tempFile.is_open() || !originalFile.is_open()) {
 			std::cerr << fileName << " couldn't be replaced!" << std::endl;
 			return false;
 		}
-
 		while (tempFile.getline(line, MAX_LEN_LINE)) {
 			originalFile << line << std::endl;
 		}
-
-		tempFile.close();
-		originalFile.close();
 	}
-
 	return ratingUpdated;
 }
-
 
 //Sort movies by title
 char** readMoviesFromFile(const char* fileName, int& movieCount) {
@@ -1042,11 +917,7 @@ char** readMoviesFromFile(const char* fileName, int& movieCount) {
 		return nullptr;
 	}
 
-	std::ifstream myFile(fileName);
-	if (!myFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return nullptr;
-	}
+	std::ifstream myFile = readMyFile(fileName);
 
 	char** movies = new char* [movieCount];
 	for (size_t i = 0; i < movieCount; ++i) {
@@ -1196,7 +1067,7 @@ void sortMoviesByRating(char** movies, size_t movieCount) {
 //	return 0;
 //}  
 
-
+//Filter movies by rating
 void printMoviesByRating(std::ifstream& file, double userRating) {
 	char line[MAX_LEN_LINE];
 	bool foundMovies = false;
@@ -1215,26 +1086,14 @@ void printMoviesByRating(std::ifstream& file, double userRating) {
 }
 
 void filterMoviesByRating(const char* filename, double userRating) {
-	std::ifstream file(filename);
-	if (!file) {
-		std::cerr << "Unable to open file " << filename << "!" << std::endl;
-		return;
-	}
+	std::ifstream myFile = readMyFile(filename);
 
-	printMoviesByRating(file, userRating);
+	printMoviesByRating(myFile, userRating);
 
-	file.close();
+	myFile.close();
 }
 
 //Delete movie
-std::ofstream createTempFile() {
-	std::ofstream tempFile("temp.txt");
-	if (!tempFile.is_open()) {
-		std::cerr << "Temporary file couldn't be created!" << std::endl;
-	}
-	return tempFile;
-}
-
 bool deleteMovie(std::ifstream& inFile, std::ofstream& outFile, const char* title) {
 	char line[MAX_LEN_LINE];
 	bool found = false;
@@ -1277,18 +1136,9 @@ bool replaceOriginalFile(const char* originalFileName, const char* tempFileName)
 }
 
 int deleteMovieByTitle(const char* title, const char* fileName) {
-	std::ifstream myFile(fileName);
-	if (!myFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return 1;
-	}
+	std::ifstream myFile = readMyFile(fileName);
 
 	std::ofstream tempFile = createTempFile();
-	if (!tempFile.is_open()) {
-		std::cerr << "The temporary file couldn't be opened!" << std::endl;
-		myFile.close();
-		return 1;
-	}
 
 	bool found = deleteMovie(myFile, tempFile, title);
 	myFile.close();
@@ -1332,8 +1182,11 @@ int main() {
 		std::cout << "7. Filter movies by rating" << std::endl;
 		std::cout << "If you want to exit the program, press - \"CLOSE\"!" << std::endl;
 
+		std::cout << std::endl;
+
 		while (true) {
 			char command[MAX_LEN_COMMAND + 1];
+			std::cout << "Your command: ";
 			std::cin.getline(command, MAX_LEN_COMMAND);
 
 			if (myStrCmp(command, "1") == 0) {
@@ -1436,8 +1289,11 @@ int main() {
 		std::cout << "9. Filter movies by rating" << std::endl;
 		std::cout << "If you want to exit the program, press - \"CLOSE\"!" << std::endl;
 
+		std::cout << std::endl;
+
 		while (true) {
 			char command[MAX_LEN_COMMAND + 1];
+			std::cout << "Your command: ";
 			std::cin.getline(command, MAX_LEN_COMMAND);
 
 			if (myStrCmp(command, "1") == 0) {
@@ -1597,7 +1453,8 @@ int main() {
 					std::cout << "Enter the new rating: ";
 					std::cin >> newRating;
 					if (!std::cin || newRating < 0 || newRating > 10) {
-						std::cerr << "Invalid input! Your new rating must be a positive integer number between 0 and 10!" << std::endl;
+						std::cerr << "Invalid input! Your new rating must be a positive integer number between 1 and 10!" << std::endl;
+						return 1;
 					}
 					std::cin.ignore();
 
