@@ -1,6 +1,7 @@
 #include<iostream>
 #include<fstream>
 
+
 const int MAX_LEN_TEXT_FILE_NAME = 20;
 const int MAX_LEN_ROLE = 15;
 const int MAX_LEN_COMMAND = 7;
