@@ -1,15 +1,15 @@
 <h1> IMDb database </h1>
 <p>This project was created for the Introduction to Programming - Practicum course at the Faculty of Mathematics and Informatics, Sofia University, Bulgaria. </p>
 
-<p>The project simulates a popular and widely-used database for movies, television series, actors, directors, and other industry professionals, akin to IMDb.</p>
+<p>The project simulates a popular and widely-used database for movies, television series, actors, directors, and other industry professionals IMDb.</p>
 
-<p>It supports two distinct types of clients: 'users' and 'administrators'. Each client type has specific rights and limitations based on their role within the system.</p>
+<p>It supports two distinct types of clients: 'ordinary users' and 'administrators'. Each client type has specific rights and limitations based on their role within the system.</p>
 
 <p>Upon program startup, a menu is displayed, allowing clients to select their role. Based on their selection, two distinct menus are presented:</p>
 
-<p>Clients have access to the database, which includes information such as movie titles, directors, year of release, genres, casts, and ratings. They can search for movies by title or genre, sort them by rating or title, filter movies by rating, and rate movies.</p>
+<p>The ordinary users have access to the database, which includes information such as movie titles, directors, year of release, genres, casts, and ratings. They can search for movies by title or genre, sort them by rating or title, filter movies by rating, and rate movies.</p>
 
-<p>Administrators have access to the same features as users, excluding the ability to rate movies. However, they also possess additional privileges, including the ability to add new movies to the database, modify any movie attributes, and delete movies.</p>
+<p>The administrators have access to the same features as users, excluding the ability to rate movies. However, they also possess additional privileges, including the ability to add new movies to the database, modify any movie attributes, and delete movies.</p>
 
 <p>Once their tasks are complete, users and administrators can exit the program using the menu.</p>
 
@@ -31,3 +31,5 @@
 <p><h4>8. Filter Movies by Rating:</h4> Available to both the ordinary users and administrators, this functionality enables clients to filter and display movies that have a rating equal to or higher than the one specified by the client.</p>
 
 <p><h4>9. Rate Movies:</h4> This feature, visible only to ordinary users, allows them to rate movies on a scale from 1 to 10. The ratings are stored, and the overall rating for each movie is calculated by averaging the ratings based on the total number of users who have rated the movie.</p>
+
+For more details you can read the rest of the taks here: [IMDb project](https://docs.google.com/document/d/1p3Z3TflLIWOzPzea_vgy_Qw0JEN22FvvT8ojKVcPNxY/edit?tab=t.0)
