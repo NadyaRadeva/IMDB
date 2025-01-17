@@ -73,8 +73,11 @@ void myStrCpy(const char* source, char* dest);
 //bool checkIfRatingIsValid(const char* rating);
 
 //Main Functions
+//Add new movie to the database
 int addNewMovieToDataBase(const char* title, int year, const char* genre, const char* director, const char* cast, const char* fileName);
+//Find movie by genre
 int findMovieByGenre(const char* genre, const char* fileName);
+//Find movie by title
 int findMovieByTitle(const char* title, const char* fileName);
 int showAllMoviesInDatabase(const char* fileName);
 bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fileName);
@@ -233,8 +236,6 @@ char* toUpper(char* userInput) {
 	return userInput;
 }
 
-
-
 //Function that checks if a string array is a substring of another string array
 bool contains(const char* str1, const char* str2) {
 	return myStrStr(str1, str2) != nullptr;
@@ -271,21 +272,31 @@ char* modifyInputGenre(const char* inputGenre) {
 	return modifiedGenre;
 }
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //Function checking if the user input matches a part of the title
 bool isSubstringMatch(const char* str, const char* subStr) {
 	if (!str || !subStr) {
 		return false;
 	}
 
-	int strLen = strlen(str);
-	int subStrLen = strlen(subStr);
+
+	int strLen = findTextLen(str);
+	int subStrLen = findTextLen(subStr);
+
+	int pos = 0;
+	for (size_t i = 0; i < strLen; ++i) {
+		if (*str != '|') {
+			pos++;
+		}
+		else {
+			break;
+		}
+	}
 
 	if (subStrLen > strLen) {
 		return false;
 	}
 
-	for (size_t i = 0; i <= strLen - subStrLen; ++i) {
+	for (size_t i = 0; i <= strLen - subStrLen && pos>=0; ++i, pos--) {
 		bool isMatchFound = true;
 		for (size_t j = 0; j < subStrLen; ++j) {
 			if (toLowerCaseChar(str[i + j]) != toLowerCaseChar(subStr[j])) {
@@ -300,7 +311,6 @@ bool isSubstringMatch(const char* str, const char* subStr) {
 
 	return false;
 }
-
 
 //Function that checks if two string arrays are identical
 int myStrCmp(const char* str1, const char* str2) {
@@ -1212,8 +1222,6 @@ double calculateAverageRating(const char* ratingsFile, int movieIndex) {
 	return (count > 0) ? (total / count) : 0.0;
 }
 
-
-
 int findRatingStartPos(char* line) {
 	int len = 0;
 
@@ -1222,6 +1230,7 @@ int findRatingStartPos(char* line) {
 	}
 
 	int pos = len - 1;
+
 	while (pos >= 0 && line[pos] != '|') {
         pos--;
     }
@@ -1252,8 +1261,6 @@ bool updateAverageRatingInLine(char* line, double newRating) {
 
 	return true;
 }
-
-
 
 bool updateAverageMovieRating(const char* title, double newRating, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
