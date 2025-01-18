@@ -3,13 +3,13 @@
 * Introduction to programming course
 * Faculty of Mathematics and Informatics of Sofia University
 * Winter semester 2024/2025
-* 
+*
 * @author Nadya Radeva
 * @idnumber 1MI0600454
 * @compiler VC
-* 
+*
 * <This file consists of all functions including main.>
-* 
+*
 */
 
 #include<iostream>
@@ -33,7 +33,7 @@ const int MAX_LEN_MOVIE_DIRECTOR = 500;
 const int MAX_LEN_MOVIE_CAST = 4000;
 const double MIN_RATING = 0.0;
 const double MAX_RATING = 10.0;
-const int MAX_LEN_RATING = 3;
+const int MAX_LEN_RATING = 4;
 const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5; // MAX_LEN_MOVIE_TITLES + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + RATING (MAX - 2 digits) + 10 spaces + 5 lines
 
 //Base Functions
@@ -80,7 +80,7 @@ bool updateDirectorInLine(char* line, const char* newDirector);
 //Function that replaces the current director of a movie with a new one (in line)
 bool updateMovieCastInLine(char* line, const char* newCast);
 //Function that replaces the current rating of a movie with a new one (in line)
-bool updateRatingInLine(char* line, int newRating);
+bool updateRatingInLine(char* line, double newRating);
 //Function that counts how many lines there are in the text file and how many movies there are in the database
 int countLinesInFile(const char* fileName);
 //Function that copies the contents of a string into another one
@@ -107,13 +107,13 @@ bool updateMovieDirector(const char* title, const char* newDirector, const char*
 bool updateMovieCast(const char* title, const char* newCast, const char* fileName);
 //Function that updates the rating of a chosen movie
 void copyNewRating(const char* ratingStr, char* line, int startPos, int newLen);
-bool updateMovieRating(const char* title, int newRating, const char* fileName);
+bool updateMovieRating(const char* title, double newRating, const char* fileName);
 //Sort movies by title
 char** readMoviesFromFile(const char* fileName, int& movieCount);
 void sortMoviesByTitle(char** movies, int movieCount);
 //Sort movies by rating
-int extractRating(const char* movieData);
-void sortMoviesByRating(char** movies, size_t movieCount);
+double extractRating(const char* movieData);
+void sortMoviesByRating(char** movies, int movieCount);
 //Filter movies rating given by the user
 void printMoviesByRating(std::ifstream& file, double userRating);
 void filterMoviesByRating(const char* filename, double userRating);
@@ -419,7 +419,7 @@ int countLinesInFile(const char* fileName) {
 	std::ifstream myFile = readMyFile(fileName);
 
 	int lineCount = 0;
-	char lines[MAX_LEN_LINE];
+	char lines[MAX_LEN_LINE + 1];
 
 	while (myFile.getline(lines, MAX_LEN_LINE)) {
 		++lineCount;
@@ -429,6 +429,7 @@ int countLinesInFile(const char* fileName) {
 	return lineCount;
 }
 
+//Function that copies the contents of a string in another
 void myStrCpy(const char* source, char* dest) {
 	if (!source || !dest) {
 		return;
@@ -451,7 +452,6 @@ std::ofstream createTempFile() {
 	}
 	return tempFile;
 }
-
 
 //Add new movie to the database
 int addNewMovieToDataBase(const char* title, int year, const char* genre, const char* director, const char* cast, const char* fileName) {
@@ -480,10 +480,11 @@ int findMovieByGenre(const char* genre, const char* fileName) {
 		return 1;
 	}
 
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 	bool found = false;
 
 	char* modifiedGenre = modifyInputText(genre);
+
 	std::cout << "Movies in the genre '" << genre << "': " << std::endl;
 	while (myFile.getline(line, MAX_LEN_LINE)) {
 		if (myStrStr(line, modifiedGenre)) {
@@ -493,7 +494,7 @@ int findMovieByGenre(const char* genre, const char* fileName) {
 	}
 
 	if (!found) {
-		std::cout << "No movies found in the genre '" << genre << "'!" << std::endl;
+		std::cout << "No movies found in the genre \"" << genre << "\"!" << std::endl;
 	}
 
 	delete[] modifiedGenre;
@@ -510,13 +511,12 @@ int findMovieByTitle(const char* title, const char* fileName) {
 		return 1;
 	}
 
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 	bool found = false;
 
-	char* modifiedTitle = modifyInputText(title);
 	std::cout << "Movies with the title '" << title << "': " << std::endl;
 	while (myFile.getline(line, MAX_LEN_LINE)) {
-		if (isSubstringMatch(line, modifiedTitle)) {
+		if (isSubstringMatch(line, title)) {
 			std::cout << line << "\n";
 			found = true;
 		}
@@ -526,7 +526,6 @@ int findMovieByTitle(const char* title, const char* fileName) {
 		std::cout << "No movies found with the title '" << title << "'!" << std::endl;
 	}
 
-	delete[] modifiedTitle;
 	myFile.close();
 	return 0;
 }
@@ -535,7 +534,7 @@ int findMovieByTitle(const char* title, const char* fileName) {
 int showAllMoviesInDatabase(const char* fileName) {
 	std::ifstream myFile = readMyFile(fileName);
 
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 
 	while (myFile.getline(line, MAX_LEN_LINE)) {
 		std::cout << line << std::endl;
@@ -575,24 +574,22 @@ bool updateTitleInLine(char* line, const char* oldTitle, const char* newTitle) {
 	return true;
 }
 
+//Function that updates the title in the movie database text file
 bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
 
 	std::ofstream outFile = createTempFile();
 
 	bool titleUpdated = false;
-	char line[MAX_LEN_LINE];
-
-	char* modifiedOldTitle = modifyInputText(oldTitle);
+	char line[MAX_LEN_LINE + 1];
 
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		if (myStrStr(line, modifiedOldTitle)) {
-			updateTitleInLine(line, modifiedOldTitle, newTitle);
+		if (myStrStr(line, oldTitle)) {
+			updateTitleInLine(line, oldTitle, newTitle);
 			titleUpdated = true;
 		}
 		outFile << line << std::endl;
 	}
-
 	inFile.close();
 	outFile.close();
 
@@ -612,8 +609,6 @@ bool updateMovieTitle(const char* oldTitle, const char* newTitle, const char* fi
 		tempFile.close();
 		originalFile.close();
 	}
-
-	delete[] modifiedOldTitle;
 
 	return titleUpdated;
 }
@@ -658,24 +653,21 @@ bool updateReleaseYearInLine(char* line, int newReleaseYear) {
 	return true;
 }
 
+//Function that updates the release year in the movies database text file
 bool updateReleaseYear(const char* title, int newReleaseYear, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
 
 	std::ofstream outFile = createTempFile();
 
 	bool releaseYearUpdated = false;
-	char line[MAX_LEN_LINE];
-
-	char* lowerCaseTitle = toLower(title);
+	char line[MAX_LEN_LINE + 1];
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, lowerCaseTitle)) {
+		if (myStrStr(line, title)) {
 			if (updateReleaseYearInLine(line, newReleaseYear)) {
 				releaseYearUpdated = true;
 			}
 		}
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
 	inFile.close();
@@ -694,8 +686,6 @@ bool updateReleaseYear(const char* title, int newReleaseYear, const char* fileNa
 		tempFile.close();
 		originalFile.close();
 	}
-
-	delete[] lowerCaseTitle;
 
 	return releaseYearUpdated;
 }
@@ -741,24 +731,22 @@ bool updateGenreInLine(char* line, const char* newGenre) {
 	return true;
 }
 
+//Function tha updates the movie genre in the movie database text file
 bool updateMovieGenre(const char* title, const char* newGenre, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
 	std::ofstream outFile = createTempFile();
 
 	bool genreUpdated = false;
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 
-	char* lowerCaseTitle = toLower(title);
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, lowerCaseTitle)) {
+		if (myStrStr(line, title)) {
 			if (updateGenreInLine(line, newGenre)) {
 				genreUpdated = true;
 			}
 		}
 
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
 	inFile.close();
@@ -778,7 +766,6 @@ bool updateMovieGenre(const char* title, const char* newGenre, const char* fileN
 		originalFile.close();
 	}
 
-	delete[] lowerCaseTitle;
 	return genreUpdated;
 }
 
@@ -827,25 +814,23 @@ bool updateDirectorInLine(char* line, const char* newDirector) {
 	return true;
 }
 
+//Function that updates the movie director in the movie database text file
 bool updateMovieDirector(const char* title, const char* newDirector, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
 
 	std::ofstream outFile = createTempFile();
 
 	bool directorUpdated = false;
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 
-	char* lowerCaseTitle = toLower(title);
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, lowerCaseTitle)) {
+		if (myStrStr(line, title)) {
 			if (updateDirectorInLine(line, newDirector)) {
 				directorUpdated = true;
 			}
 		}
 
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
 	inFile.close();
@@ -868,7 +853,6 @@ bool updateMovieDirector(const char* title, const char* newDirector, const char*
 		originalFile.close();
 	}
 
-	delete[] lowerCaseTitle;
 	return directorUpdated;
 }
 
@@ -916,23 +900,21 @@ bool updateMovieCastInLine(char* line, const char* newCast) {
 	return true;
 }
 
+//Function that changes the movie cast in the movie database text file
 bool updateMovieCast(const char* title, const char* newCast, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
 	std::ofstream outFile = createTempFile();
 
 	bool castUpdated = false;
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 
-	char* lowerCaseTitle = modifyInputText(title);
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, lowerCaseTitle)) {
+		if (myStrStr(line, title)) {
 			if (updateMovieCastInLine(line, newCast)) {
 				castUpdated = true;
 			}
 		}
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
 	inFile.close();
@@ -954,7 +936,6 @@ bool updateMovieCast(const char* title, const char* newCast, const char* fileNam
 		originalFile.close();
 	}
 
-	delete[] lowerCaseTitle;
 	return castUpdated;
 }
 
@@ -965,7 +946,8 @@ void copyNewRating(const char* ratingStr, char* line, int startPos, int newLen) 
 	}
 }
 
-bool updateRatingInLine(char* line, int newRating) {
+//Function that changes the rating in the current line
+bool updateRatingInLine(char* line, double newRating) {
 	const char* delimiters[MAX_NUMBER_OF_DELIMITERS];
 	delimiters[0] = myStrStr(line, DELIMITER);
 	for (size_t i = 1; i < MAX_NUMBER_OF_DELIMITERS && delimiters[i - 1]; ++i) {
@@ -977,8 +959,29 @@ bool updateRatingInLine(char* line, int newRating) {
 
 	const char* ratingStart = delimiters[MAX_NUMBER_OF_DELIMITERS - 2] + DISTANCE_BETWEEN_MOVIE_PARAMETERS;
 	int oldLen = delimiters[MAX_NUMBER_OF_DELIMITERS - 1] - ratingStart;
-	int newLen = countDigitsInNumber(newRating);
-	
+
+	char ratingStr[MAX_LEN_RATING + 1];
+	int integerPart = static_cast<int>(newRating);
+	int decimalPart = static_cast<int>((newRating - integerPart) * 10);
+	int index = 0;
+
+	int temp = integerPart;
+	do {
+		ratingStr[index++] = (temp % 10) + TO_CHAR;
+		temp /= 10;
+	} while (temp > 0);
+	for (int i = 0; i < index / 2; ++i) {
+		char tmp = ratingStr[i];
+		ratingStr[i] = ratingStr[index - 1 - i];
+		ratingStr[index - 1 - i] = tmp;
+	}
+
+	ratingStr[index++] = '.';
+	ratingStr[index++] = decimalPart + '0';
+	ratingStr[index] = '\0';
+
+	int newLen = index;
+
 	int diff = newLen - oldLen;
 	if (diff != 0) {
 		for (size_t i = MAX_LEN_LINE - 1; i >= (delimiters[MAX_NUMBER_OF_DELIMITERS - 1] - line); --i) {
@@ -986,9 +989,7 @@ bool updateRatingInLine(char* line, int newRating) {
 		}
 	}
 
-	char* ratingStr = turnIntegerRatingToChar(newRating);
 	copyNewRating(ratingStr, line, ratingStart - line, newLen);
-	delete[] ratingStr;
 
 	int endPos = ratingStart - line + newLen;
 	line[endPos] = '/';
@@ -999,7 +1000,8 @@ bool updateRatingInLine(char* line, int newRating) {
 	return true;
 }
 
-bool updateMovieRating(const char* title, int newRating, const char* fileName) {
+//Function that changes the rating in the movie database text file
+bool updateMovieRating(const char* title, double newRating, const char* fileName) {
 	std::ifstream inFile = readMyFile(fileName);
 	std::ofstream outFile = createTempFile();
 
@@ -1009,17 +1011,12 @@ bool updateMovieRating(const char* title, int newRating, const char* fileName) {
 	}
 
 	bool ratingUpdated = false;
-	char line[MAX_LEN_LINE];
-
-	char* lowerCaseTitle = toLower(title);
+	char line[MAX_LEN_LINE + 1];
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (!ratingUpdated && myStrStr(lowerLine, lowerCaseTitle)) {
+		if (!ratingUpdated && myStrStr(line, title)) {
 			ratingUpdated = updateRatingInLine(line, newRating);
 		}
-
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
 	inFile.close();
@@ -1036,8 +1033,6 @@ bool updateMovieRating(const char* title, int newRating, const char* fileName) {
 			originalFile << line << std::endl;
 		}
 	}
-
-	delete[] lowerCaseTitle;
 	return ratingUpdated;
 }
 
@@ -1106,11 +1101,11 @@ void freeMovies(char** movies, int movieCount) {
 }
 
 //Sort movies by rating
-int extractRating(const char* movieData) {
+double extractRating(const char* movieData) {
 	int len = findTextLen(movieData);
 	int ratingStart = -1;
 
-	for (size_t i = len - 1; i >= 0; --i) {
+	for (int i = len - 1; i >= 0; --i) {
 		if (movieData[i] == ' ') {
 			ratingStart = i + 1;
 			break;
@@ -1118,30 +1113,51 @@ int extractRating(const char* movieData) {
 	}
 
 	if (ratingStart == -1) {
-		return -1;
+		return -1.0;
 	}
 
-	if (isDigit(movieData[ratingStart])) {
-		int rating = 0;
-		for (size_t i = ratingStart; i < len; ++i) {
-			if (isDigit(movieData[i])) {
-				rating = rating * 10 + (movieData[i] + TO_INTEGER);
-			}
-			else if (movieData[i] == '/') {
-				return rating;
+	while (ratingStart < len && !isDigit(movieData[ratingStart]) && movieData[ratingStart] != '.') {
+		++ratingStart;
+	}
+
+	if (ratingStart >= len || (!isDigit(movieData[ratingStart]) && movieData[ratingStart] != '.')) {
+		return -1.0; 
+	}
+
+	double rating = 0.0;
+	double fractionalPart = 0.0;
+	double divisor = 10.0;
+	bool isFractional = false;
+
+	for (int i = ratingStart; i < len; ++i) {
+		if (isDigit(movieData[i])) {
+			if (isFractional) {
+				fractionalPart += (movieData[i] + TO_INTEGER) / divisor;
+				divisor *= 10.0;
 			}
 			else {
-				return -1;
+				rating = rating * 10 + (movieData[i] + TO_INTEGER);
 			}
+		}
+		else if (movieData[i] == '.') {
+			if (isFractional) break; 
+			isFractional = true;
+		}
+		else if (movieData[i] == '/') {
+			break;
+		}
+		else {
+			return -1.0;
 		}
 	}
 
-	return -1;
+	return rating + fractionalPart;
 }
 
-void sortMoviesByRating(char** movies, size_t movieCount) {
+//Sort movies by their ratings using selection sort
+void sortMoviesByRating(char** movies, int movieCount) {
 	for (size_t i = 0; i < movieCount - 1; ++i) {
-		size_t minIndex = i;
+		int minIndex = i;
 		double minRating = extractRating(movies[i]);
 
 		for (size_t j = i + 1; j < movieCount; ++j) {
@@ -1162,7 +1178,7 @@ void sortMoviesByRating(char** movies, size_t movieCount) {
 
 //Filter movies by rating
 void printMoviesByRating(std::ifstream& file, double userRating) {
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 	bool foundMovies = false;
 
 	while (file.getline(line, MAX_LEN_LINE)) {
@@ -1188,21 +1204,17 @@ void filterMoviesByRating(const char* filename, double userRating) {
 
 //Delete movie
 bool deleteMovie(std::ifstream& inFile, std::ofstream& outFile, const char* title) {
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 	bool found = false;
 
-	char* lowerCaseTitle = toLower(title);
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, title)) {
+		if (myStrStr(line, title)) {
 			found = true;
 			continue;
 		}
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
-	delete[] lowerCaseTitle;
 	return found;
 }
 
@@ -1220,7 +1232,7 @@ bool replaceOriginalFile(const char* originalFileName, const char* tempFileName)
 		return false;
 	}
 
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 
 	while (tempFile.getline(line, MAX_LEN_LINE)) {
 		originalFile << line << std::endl;
@@ -1242,7 +1254,7 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 	tempFile.close();
 
 	if (!found) {
-		std::cout << "No movie found with the title '" << title << "'!" << std::endl;
+		std::cout << "No movie found with the title \"" << title << "\"!" << std::endl;
 		return 0;
 	}
 
@@ -1256,34 +1268,29 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 }
 
 //Rate movie
-//Function 
+//Function that 
 int findMovieIndex(const char* movieTitle, const char* fileName) {
 	std::ifstream file(fileName);
-	char line[MAX_LEN_LINE];
+	char line[MAX_LEN_LINE + 1];
 	int index = 0;
 
 	if (!file) {
 		return -1;
 	}
 
-	char* lowerCaseTitle = toLower(movieTitle);
 	while (file.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, movieTitle)) {
+		if (myStrStr(line, movieTitle)) {
 			file.close();
 			return index;
 		}
 		index++;
-
-		delete[] lowerLine;
 	}
 
-	delete[] lowerCaseTitle;
 	file.close();
 	return -1;
 }
 
-// Function to append a new rating to Rating.txt
+// Function that writes the new rating and the movie index to Rating.txt
 void appendRating(const char* ratingsFile, int movieIndex, int newRating) {
 	std::ofstream file(ratingsFile, std::ios::app);
 	if (!file) {
@@ -1328,9 +1335,9 @@ int findRatingStartPos(char* line) {
 	int pos = len - 1;
 
 	while (pos >= 0 && line[pos] != '|') {
-        pos--;
-    }
-	
+		pos--;
+	}
+
 
 	while (pos >= 0 && line[pos] == ' ') {
 		pos--;
@@ -1340,14 +1347,14 @@ int findRatingStartPos(char* line) {
 }
 
 //Function that updates the new formatted calculated average rating in the line the movies is at
-bool updateAverageRatingInLine(char* line, double newRating) { 
+bool updateAverageRatingInLine(char* line, double newRating) {
 	int integerPart = (int)newRating;
 	int decimalPart = (newRating - integerPart) * 10;
 
 	int startPos = findRatingStartPos(line);
 
 	line[startPos] = '0' + integerPart;
-	line[startPos + 1] = '.';   
+	line[startPos + 1] = '.';
 	line[startPos + 2] = '0' + decimalPart;
 
 	line[startPos + 3] = '/';
@@ -1370,18 +1377,14 @@ bool updateAverageMovieRating(const char* title, double newRating, const char* f
 	}
 
 	bool ratingUpdated = false;
-	char line[MAX_LEN_LINE];
-
-	char* lowerCaseTitle = toLower(title);
+	char line[MAX_LEN_LINE + 1];
 
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (!ratingUpdated && myStrStr(lowerLine, lowerCaseTitle)) {
+		if (!ratingUpdated && myStrStr(line, title)) {
 			ratingUpdated = updateAverageRatingInLine(line, newRating);
 		}
 
 		outFile << line << std::endl;
-		delete[] lowerLine;
 	}
 
 	inFile.close();
@@ -1399,11 +1402,10 @@ bool updateAverageMovieRating(const char* title, double newRating, const char* f
 		}
 	}
 
-	delete[] lowerCaseTitle;
 	return ratingUpdated;
 }
 
-
+//Function that finds the location of the movie in the database based on its title
 bool findMovieTitleLine(const char* title, const char* fileName, char* line) {
 	std::ifstream inFile(fileName);
 	if (!inFile.is_open()) {
@@ -1411,43 +1413,37 @@ bool findMovieTitleLine(const char* title, const char* fileName, char* line) {
 		return false;
 	}
 
-	char* lowerCaseTitle = toLower(title);
-
 	while (inFile.getline(line, MAX_LEN_LINE)) {
-		char* lowerLine = toLower(line);
-		if (myStrStr(lowerLine, lowerCaseTitle)) {
+		if (myStrStr(line, title)) {
 			return true;
 		}
-
-		delete[] lowerLine;
 	}
 
-	delete[] lowerCaseTitle;
 	return false;
 }
 
 // Main function to handle the rating process
 void rateMovie(const char* movieTitle, int newRating, const char* fileName, const char* ratingsFile) {
-    int movieIndex = findMovieIndex(movieTitle, fileName);
-    if (movieIndex == -1) {
-		std::cout << "'" << movieTitle << "' was not found!" << std::endl;
-        return;
-    }
+	int movieIndex = findMovieIndex(movieTitle, fileName);
+	if (movieIndex == -1) {
+		std::cout << "\"" << movieTitle << "\" was not found!" << std::endl;
+		return;
+	}
 
-    char line[MAX_LEN_LINE];
-    if (!findMovieTitleLine(movieTitle, fileName, line)) {
-        std::cout << "Movie not found!" << std::endl;
-        return;
-    }
+	char line[MAX_LEN_LINE + 1];
+	if (!findMovieTitleLine(movieTitle, fileName, line)) {
+		std::cout << "Movie not found!" << std::endl;
+		return;
+	}
 
-    appendRating(ratingsFile, movieIndex, newRating);
+	appendRating(ratingsFile, movieIndex, newRating);
 
-    double newAverageRating = calculateAverageRating(ratingsFile, movieIndex);
+	double newAverageRating = calculateAverageRating(ratingsFile, movieIndex);
 
 	updateAverageRatingInLine(line, newAverageRating);
 	updateAverageMovieRating(movieTitle, newAverageRating, fileName);
 
-	std::cout << "You have rated '" << movieTitle << "' successfully!" << std::endl;
+	std::cout << "You have rated \"" << movieTitle << "\" successfully!" << std::endl;
 }
 
 int main() {
@@ -1538,6 +1534,8 @@ int main() {
 				std::cin.ignore();
 
 				rateMovie(movieToRate, newRating, fileName, "Ratings.txt");
+
+				std::cout << std::endl;
 			}
 			else if (myStrCmp(command, "7") == 0) {
 				std::cout << "Enter the rating you want to filter your movies by: ";
@@ -1638,7 +1636,7 @@ int main() {
 			else if (myStrCmp(command, "5") == 0) {
 				char option[MAX_LEN_OPTION + 1];
 				std::cout << "What do you want to change about a movie? - Enter one of the words \"title\", \"year\"";
-				std::cout<< "\"genre\", \"director\", \"cast\" or \"rating\" here: ";
+				std::cout << ", \"genre\", \"director\", \"cast\" or \"rating\" here: ";
 				std::cin.getline(option, MAX_LEN_OPTION);
 				if (myStrCmp(toLower(option), "title") == 0) {
 					std::cout << "Enter the movie you want to change the title of: ";
@@ -1650,7 +1648,7 @@ int main() {
 
 					if (updateMovieTitle(movieToChangeTitleOf, newMovieTitle, fileName)) {
 						std::cout << "The title of \"" << movieToChangeTitleOf << "\" has been changed to \"";
-						std::cout<<"\"" << newMovieTitle << "\" successfully!" << std::endl;
+						std::cout << "\"" << newMovieTitle << "\" successfully!" << std::endl;
 					}
 					else {
 						std::cout << "The operation wasn't successful!" << std::endl;
@@ -1779,6 +1777,8 @@ int main() {
 				printMovies(movies, movieCount);
 
 				freeMovies(movies, movieCount);
+
+				std::cout << std::endl;
 			}
 			else if (myStrCmp(command, "8") == 0) {
 				int movieCount = countLinesInFile(fileName);
