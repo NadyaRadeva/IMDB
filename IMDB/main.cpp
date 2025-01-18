@@ -132,6 +132,7 @@ bool updateAverageMovieRating(const char* title, double newRating, const char* f
 bool findMovieTitleLine(const char* title, const char* fileName, char* line);
 void rateMovie(const char* movieTitle, int newRating, const char* fileName, const char* ratingsFile);
 
+
 //Function that checks if a character is a letter
 bool isLetter(char ch) {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
