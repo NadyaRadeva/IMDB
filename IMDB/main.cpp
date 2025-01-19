@@ -1,4 +1,4 @@
-/*
+/**
 * Solution to course project # 6
 * Introduction to programming course
 * Faculty of Mathematics and Informatics of Sofia University
