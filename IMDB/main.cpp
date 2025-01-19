@@ -1119,7 +1119,7 @@ double extractRating(const char* movieData) {
 	}
 
 	if (ratingStart >= len || (!isDigit(movieData[ratingStart]) && movieData[ratingStart] != '.')) {
-		return -1.0; 
+		return -1.0;
 	}
 
 	double rating = 0.0;
@@ -1138,7 +1138,7 @@ double extractRating(const char* movieData) {
 			}
 		}
 		else if (movieData[i] == '.') {
-			if (isFractional) break; 
+			if (isFractional) break;
 			isFractional = true;
 		}
 		else if (movieData[i] == '/') {
@@ -1566,6 +1566,8 @@ int main() {
 			}
 			else {
 				std::cout << "Your command is invalid!" << std::endl;
+				std::cout << std::endl;
+				return 1;
 			}
 		}
 	}
