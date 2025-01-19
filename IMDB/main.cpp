@@ -1095,7 +1095,7 @@ double extractRating(const char* movieData) {
 	int len = findTextLen(movieData);
 	int ratingStart = -1;
 
-	for (int i = len - 1; i >= 0; --i) {
+	for (size_t i = len - 1; i >= 0; --i) {
 		if (movieData[i] == ' ') {
 			ratingStart = i + 1;
 			break;
@@ -1119,7 +1119,7 @@ double extractRating(const char* movieData) {
 	double divisor = 10.0;
 	bool isFractional = false;
 
-	for (int i = ratingStart; i < len; ++i) {
+	for (size_t i = ratingStart; i < len; ++i) {
 		if (isDigit(movieData[i])) {
 			if (isFractional) {
 				fractionalPart += (movieData[i] + TO_INTEGER) / divisor;
