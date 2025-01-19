@@ -59,7 +59,7 @@ char* yearToChar(int year);
 char* toLower(const char* userInput);
 char* toUpper(char* userInput);
 char* modifyInputText(const char* inputText);
-bool isSubstringMatch(const char* str, const char* subStr);
+bool isTitleMatch(const char* str, const char* subStr);
 
 //Functions handling the rating
 char* turnIntegerRatingToChar(int rating);
@@ -315,30 +315,20 @@ char* modifyInputText(const char* inputText) {
 }
 
 //Function checking if the user input matches a part of the title
-bool isSubstringMatch(const char* str, const char* subStr) {
+bool isTitleMatch(const char* str, const char* subStr) {
 	if (!str || !subStr) {
 		return false;
 	}
 
-
 	int strLen = findTextLen(str);
 	int subStrLen = findTextLen(subStr);
 
-	int pos = 0;
-	for (size_t i = 0; i < strLen; ++i) {
-		if (*str != '|') {
-			pos++;
-		}
-		else {
-			break;
-		}
+	int startPos = 0;
+	while (str[startPos] != '|' && str[startPos] != '\0') {
+		startPos++;
 	}
 
-	if (subStrLen > strLen) {
-		return false;
-	}
-
-	for (size_t i = 0; i <= strLen - subStrLen && pos >= 0; ++i, pos--) {
+	for (size_t i = startPos; i <= strLen - subStrLen; ++i) {
 		bool isMatchFound = true;
 		for (size_t j = 0; j < subStrLen; ++j) {
 			if (toLowerCaseChar(str[i + j]) != toLowerCaseChar(subStr[j])) {
@@ -352,6 +342,14 @@ bool isSubstringMatch(const char* str, const char* subStr) {
 	}
 
 	return false;
+}
+
+bool isGenreMatch(const char* line, const char* genre) {
+	if (!line || !genre) {
+		return false;
+	}
+
+	int firstDelimiter = 0, secondDelimiter = 0;
 }
 
 //Function that checks if two string arrays are identical
@@ -377,7 +375,7 @@ char* myStrStr(const char* str1, const char* str2) {
 		const char* h = str1;
 		const char* n = str2;
 
-		while (*h && *n && (*h == *n)) {
+		while (*h && *n && (toLowerCaseChar(*h) == toLowerCaseChar(*n))) {
 			h++;
 			n++;
 		}
@@ -466,7 +464,7 @@ int addNewMovieToDataBase(const char* title, int year, const char* genre, const 
 
 	myFile.close();
 
-	std::cout << title << " has been successfully added to the movie data base!" << std::endl;
+	std::cout << "\"" << title << "\" has been successfully added to the movie database!" << std::endl;
 
 	return 0;
 }
@@ -516,7 +514,7 @@ int findMovieByTitle(const char* title, const char* fileName) {
 
 	std::cout << "Movies with the title '" << title << "': " << std::endl;
 	while (myFile.getline(line, MAX_LEN_LINE)) {
-		if (isSubstringMatch(line, title)) {
+		if (isTitleMatch(line, title)) {
 			std::cout << line << "\n";
 			found = true;
 		}
@@ -1268,13 +1266,14 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 }
 
 //Rate movie
-//Function that 
+//Function that finds a movie in the database and returns its index
 int findMovieIndex(const char* movieTitle, const char* fileName) {
 	std::ifstream file(fileName);
 	char line[MAX_LEN_LINE + 1];
 	int index = 0;
 
-	if (!file) {
+	if (!file.is_open()) {
+		std::cerr << fileName << " couldn't be opened!" << std::endl;
 		return -1;
 	}
 
@@ -1283,7 +1282,7 @@ int findMovieIndex(const char* movieTitle, const char* fileName) {
 			file.close();
 			return index;
 		}
-		index++;
+		++index;
 	}
 
 	file.close();
@@ -1391,19 +1390,29 @@ bool updateAverageMovieRating(const char* title, double newRating, const char* f
 	outFile.close();
 
 	if (ratingUpdated) {
-		std::ifstream tempFile("temp.txt");
 		std::ofstream originalFile(fileName, std::ios::trunc);
-		if (!tempFile.is_open() || !originalFile.is_open()) {
-			std::cerr << fileName << " couldn't be replaced!" << std::endl;
+		if (!originalFile.is_open()) {
+			std::cerr << fileName << " couldn't be opened for overwrite!" << std::endl;
 			return false;
 		}
+
+		std::ifstream tempFile("temp.txt");
+		if (!tempFile.is_open()) {
+			std::cerr << "Temporary file couldn't be opened!" << std::endl;
+			return false;
+		}
+
 		while (tempFile.getline(line, MAX_LEN_LINE)) {
 			originalFile << line << std::endl;
 		}
+
+		tempFile.close();
+		originalFile.close();
 	}
 
 	return ratingUpdated;
 }
+
 
 //Function that finds the location of the movie in the database based on its title
 bool findMovieTitleLine(const char* title, const char* fileName, char* line) {
@@ -1810,6 +1819,7 @@ int main() {
 			}
 			else {
 				std::cerr << "Your command is invalid!" << std::endl;
+				std::cout << std::endl;
 				return 1;
 			}
 
