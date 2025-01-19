@@ -34,7 +34,7 @@ const int MAX_LEN_MOVIE_CAST = 4000;
 const double MIN_RATING = 0.0;
 const double MAX_RATING = 10.0;
 const int MAX_LEN_RATING = 4;
-const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5; // MAX_LEN_MOVIE_TITLES + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + RATING (MAX - 2 digits) + 10 spaces + 5 lines
+const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5;
 
 //Base Functions
 //Simple checks
@@ -342,14 +342,6 @@ bool isTitleMatch(const char* str, const char* subStr) {
 	}
 
 	return false;
-}
-
-bool isGenreMatch(const char* line, const char* genre) {
-	if (!line || !genre) {
-		return false;
-	}
-
-	int firstDelimiter = 0, secondDelimiter = 0;
 }
 
 //Function that checks if two string arrays are identical
