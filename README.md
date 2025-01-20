@@ -32,4 +32,4 @@
 
 <p><h4>9. Rate Movies:</h4> This feature, visible only to ordinary users, allows them to rate movies on a scale from 1 to 10. The ratings are stored, and the overall rating for each movie is calculated by averaging the ratings based on the total number of users who have rated the movie.</p>
 
-For more details you can read the rest of the taks here: [IMDb project](https://docs.google.com/document/d/1p3Z3TflLIWOzPzea_vgy_Qw0JEN22FvvT8ojKVcPNxY/edit?tab=t.0)
+For more details you can read the rest of the task here: [IMDb project](https://docs.google.com/document/d/1p3Z3TflLIWOzPzea_vgy_Qw0JEN22FvvT8ojKVcPNxY/edit?tab=t.0)
