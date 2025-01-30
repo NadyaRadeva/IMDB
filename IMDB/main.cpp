@@ -46,19 +46,15 @@ char toLowerCaseChar(char ch);
 char toUpperCaseChar(char ch);
 
 int findTextLen(const char* text);
-int countDigitsInNumber(int number);
-int reverseYear(int year);
 
 //Functions that handle the release year and turn it into char string
-int countDigitsInNumber(int year);
+int countDigitsInNumber(int number);
 int reverseYear(int year);
-char* yearToChar(int year);
 char* yearToChar(int year);
 
 //Text modifications and more complicated checks
 char* toLower(const char* userInput);
 char* toUpper(char* userInput);
-char* modifyInputText(const char* inputText);
 bool isTitleMatch(const char* str, const char* subStr);
 
 //Functions handling the rating
@@ -154,12 +150,12 @@ bool isUpperCase(char ch) {
 
 //Function that turns a single character lower case
 char toLowerCaseChar(char ch) {
-	return (ch >= 'A' && ch <= 'Z') ? ch + TO_LOWER_CASE_CHANGE : ch;
+	return isUpperCase(ch) ? ch + TO_LOWER_CASE_CHANGE : ch;
 }
 
 //Function that turns a single character upper case
 char toUpperCaseChar(char ch) {
-	return (ch >= 'a' && ch <= 'z') ? ch + TO_UPPER_CASE_CHANGE : ch;
+	return isLowerCase(ch) ? ch + TO_UPPER_CASE_CHANGE : ch;
 }
 
 //Function that finds the length of the lines in the text file
@@ -178,13 +174,12 @@ int findTextLen(const char* text) {
 	return counter;
 }
 
-//Functions that handle the release year and turn it into a char array. It is used for the rate changing segments.
+//Functions that handle the release year and turn it into a char array. They are used for the year changing segments.
 //This function counts the digits in the release year
 int countDigitsInNumber(int number) {
 	int digitsCounter = 0;
 
 	while (number != 0) {
-		int temp = number % 10;
 		number /= 10;
 		digitsCounter++;
 	}
@@ -195,11 +190,13 @@ int countDigitsInNumber(int number) {
 //This function reverses the release year
 int reverseYear(int year) {
 	int reversed = 0;
+
 	while (year > 0) {
 		int digit = year % 10;
 		reversed = reversed * 10 + digit;
 		year /= 10;
 	}
+
 	return reversed;
 }
 
@@ -213,6 +210,7 @@ char* yearToChar(int year) {
 		yearStr[i] = reversedYear % 10 + TO_CHAR;
 		reversedYear /= 10;
 	}
+
 	yearStr[digits] = '\0';
 
 	return yearStr;
@@ -283,52 +281,24 @@ char* toUpper(char* userInput) {
 	return userInput;
 }
 
-//Function that changes the first letter of the genre, inputed by the user, by turning it in upper case
-char* modifyInputText(const char* inputText) {
-	int inputTextLen = findTextLen(inputText);
-	char* modifiedText = new char[inputTextLen + 1];
-	bool inWord = false;
-
-	for (size_t i = 0; i < inputTextLen; ++i) {
-		if (isLetter(inputText[i])) {
-			if (!inWord) {
-				if (isLowerCase(inputText[i])) {
-					modifiedText[i] = inputText[i] + TO_UPPER_CASE_CHANGE;
-				}
-				else {
-					modifiedText[i] = inputText[i];
-				}
-				inWord = true;
-			}
-			else {
-				modifiedText[i] = inputText[i];
-			}
-		}
-		else {
-			inWord = false;
-			modifiedText[i] = inputText[i];
-		}
-	}
-
-	modifiedText[inputTextLen] = '\0';
-	return modifiedText;
-}
-
 //Function checking if the user input matches a part of the title
 bool isTitleMatch(const char* str, const char* subStr) {
 	if (!str || !subStr) {
 		return false;
 	}
 
-	int strLen = findTextLen(str);
 	int subStrLen = findTextLen(subStr);
 
-	int startPos = 0;
-	while (str[startPos] != '|' && str[startPos] != '\0') {
-		startPos++;
+	if (subStrLen == 0) {
+		return true;
 	}
 
-	for (size_t i = startPos; i <= strLen - subStrLen; ++i) {
+	int titleEnd = 0;
+	while (str[titleEnd] != '|' && str[titleEnd] != '\0') {
+		titleEnd++;
+	}
+
+	for (size_t i = 0; i <= titleEnd - subStrLen; ++i) {
 		bool isMatchFound = true;
 		for (size_t j = 0; j < subStrLen; ++j) {
 			if (toLowerCaseChar(str[i + j]) != toLowerCaseChar(subStr[j])) {
@@ -430,6 +400,7 @@ void myStrCpy(const char* source, char* dest) {
 		dest++;
 		source++;
 	}
+
 	*dest = '\0';
 }
 
@@ -463,21 +434,14 @@ int addNewMovieToDataBase(const char* title, int year, const char* genre, const 
 
 //Find movie by genre
 int findMovieByGenre(const char* genre, const char* fileName) {
-	std::ifstream myFile(fileName);
-
-	if (!myFile.is_open()) {
-		std::cerr << fileName << " couldn't be opened!" << std::endl;
-		return 1;
-	}
+	std::ifstream myFile = readMyFile(fileName);
 
 	char line[MAX_LEN_LINE + 1];
 	bool found = false;
 
-	char* modifiedGenre = modifyInputText(genre);
-
 	std::cout << "Movies in the genre '" << genre << "': " << std::endl;
 	while (myFile.getline(line, MAX_LEN_LINE)) {
-		if (myStrStr(line, modifiedGenre)) {
+		if (myStrStr(line, genre)) {
 			std::cout << line << std::endl;
 			found = true;
 		}
@@ -487,7 +451,6 @@ int findMovieByGenre(const char* genre, const char* fileName) {
 		std::cout << "No movies found in the genre \"" << genre << "\"!" << std::endl;
 	}
 
-	delete[] modifiedGenre;
 	myFile.close();
 	return 0;
 }
@@ -507,13 +470,13 @@ int findMovieByTitle(const char* title, const char* fileName) {
 	std::cout << "Movies with the title '" << title << "': " << std::endl;
 	while (myFile.getline(line, MAX_LEN_LINE)) {
 		if (isTitleMatch(line, title)) {
-			std::cout << line << "\n";
+			std::cout << line << std::endl;
 			found = true;
 		}
 	}
 
 	if (!found) {
-		std::cout << "No movies found with the title '" << title << "'!" << std::endl;
+		std::cout << "No movies found with the title \"" << title << "\"!" << std::endl;
 	}
 
 	myFile.close();
@@ -951,8 +914,8 @@ bool updateRatingInLine(char* line, double newRating) {
 	int oldLen = delimiters[MAX_NUMBER_OF_DELIMITERS - 1] - ratingStart;
 
 	char ratingStr[MAX_LEN_RATING + 1];
-	int integerPart = static_cast<int>(newRating);
-	int decimalPart = static_cast<int>((newRating - integerPart) * 10);
+	int integerPart = (int)(newRating);
+	int decimalPart = (int)((newRating - integerPart) * 10);
 	int index = 0;
 
 	int temp = integerPart;
@@ -960,6 +923,7 @@ bool updateRatingInLine(char* line, double newRating) {
 		ratingStr[index++] = (temp % 10) + TO_CHAR;
 		temp /= 10;
 	} while (temp > 0);
+
 	for (int i = 0; i < index / 2; ++i) {
 		char tmp = ratingStr[i];
 		ratingStr[i] = ratingStr[index - 1 - i];
@@ -1087,6 +1051,7 @@ void freeMovies(char** movies, int movieCount) {
 	for (size_t i = 0; i < movieCount; ++i) {
 		delete[] movies[i];
 	}
+
 	delete[] movies;
 }
 
@@ -1130,7 +1095,9 @@ double extractRating(const char* movieData) {
 			}
 		}
 		else if (movieData[i] == '.') {
-			if (isFractional) break;
+			if (isFractional) {
+				break;
+			}
 			isFractional = true;
 		}
 		else if (movieData[i] == '/') {
@@ -1253,7 +1220,7 @@ int deleteMovieByTitle(const char* title, const char* fileName) {
 		return 1;
 	}
 
-	std::cout << "'" << title << "' has been successfully deleted!" << std::endl;
+	std::cout << "\"" << title << "\" has been successfully deleted!" << std::endl;
 	return 0;
 }
 
@@ -1288,7 +1255,7 @@ void appendRating(const char* ratingsFile, int movieIndex, int newRating) {
 		return;
 	}
 
-	file << movieIndex << " " << newRating << "\n";
+	file << movieIndex << " " << newRating << std::endl;
 	file.close();
 }
 
@@ -1344,9 +1311,9 @@ bool updateAverageRatingInLine(char* line, double newRating) {
 
 	int startPos = findRatingStartPos(line);
 
-	line[startPos] = '0' + integerPart;
+	line[startPos] = TO_CHAR + integerPart;
 	line[startPos + 1] = '.';
-	line[startPos + 2] = '0' + decimalPart;
+	line[startPos + 2] = TO_CHAR + decimalPart;
 
 	line[startPos + 3] = '/';
 	line[startPos + 4] = '1';
@@ -1640,6 +1607,7 @@ int main() {
 				char option[MAX_LEN_OPTION + 1];
 				std::cout << "What do you want to change about a movie? - Enter one of the words \"title\", \"year\"";
 				std::cout << ", \"genre\", \"director\", \"cast\" or \"rating\" here: ";
+				std::cout << "(For best results please input the full names of the movies!) ";
 				std::cin.getline(option, MAX_LEN_OPTION);
 				if (myStrCmp(toLower(option), "title") == 0) {
 					std::cout << "Enter the movie you want to change the title of: ";
