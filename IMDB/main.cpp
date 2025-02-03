@@ -34,7 +34,7 @@ const int MAX_LEN_MOVIE_CAST = 4000;
 const double MIN_RATING = 0.0;
 const double MAX_RATING = 10.0;
 const int MAX_LEN_RATING = 4;
-const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + 2 + 10 + 5;
+const int MAX_LEN_LINE = MAX_LEN_GENRE + MAX_LEN_GENRE + MAX_LEN_MOVIE_DIRECTOR + MAX_LEN_MOVIE_CAST + MAX_LEN_RATING + 10 + 5;
 
 //Base Functions
 //Simple checks
@@ -1284,11 +1284,7 @@ double calculateAverageRating(const char* ratingsFile, int movieIndex) {
 
 //Function that finds the position of the ratings in our original movie database
 int findRatingStartPos(char* line) {
-	int len = 0;
-
-	while (line[len] != '\0') {
-		len++;
-	}
+	int len = findTextLen(line);
 
 	int pos = len - 1;
 
